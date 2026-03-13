@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -93,6 +94,8 @@ class _SignupPageState extends State<SignupPage> {
       _signupInFlight = true;
     });
     try {
+      final normalized = AuthService.normalizeLoginId(_idCtrl.text);
+      debugPrint('[signup] request email=$normalized');
       await AuthService.signUpWithPassword(
           idOrEmail: _idCtrl.text, password: _pwCtrl.text);
 
@@ -110,11 +113,14 @@ class _SignupPageState extends State<SignupPage> {
       context.go(_autoLogin ? '/' : '/login');
     } catch (e) {
       if (!mounted) return;
+      debugPrint('[signup] error=$e');
       final msg = _friendlyError(e);
       if (msg.contains('잠시 제한')) {
         _cooldownUntil = DateTime.now().add(const Duration(seconds: 45));
       }
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      final showRaw = kDebugMode ? '\n원문: $e' : '';
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$msg$showRaw')));
     } finally {
       if (mounted) {
         setState(() {
