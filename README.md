@@ -43,7 +43,7 @@ flutter run -d android                   # Android
 ```
 
 Supabase 초기화/시드는 `docs/setup-supabase.md` 참고.
-Google Calendar OAuth 설정은 `docs/google-calendar-oauth.md` 참고.
+캘린더는 현재 외부 API 없이 Todo 기반 일정 표시 모드로 동작.
 
 ## 환경변수
 `.env`

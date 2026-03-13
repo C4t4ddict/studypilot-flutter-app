@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../../services/calendar_service.dart';
 import '../../services/planner_service.dart';
 
 class OpsPage extends StatefulWidget {
@@ -12,35 +11,39 @@ class OpsPage extends StatefulWidget {
 }
 
 class _OpsPageState extends State<OpsPage> {
-  String _calendarMsg = '연결 대기';
-  List<String> _events = [];
+  Future<List<String>> _upcomingFromTodos() async {
+    final todos = await PlannerService.listTodos();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final upcoming = todos.where((t) {
+      final s = (t['status'] ?? 'todo').toString();
+      if (s == 'done') return false;
+      final d = DateTime.tryParse((t['due_date'] ?? '').toString());
+      if (d == null) return false;
+      final dd = DateTime(d.year, d.month, d.day);
+      return !dd.isBefore(today);
+    }).take(8);
 
-  Future<void> _connectGoogleCalendar() async {
-    try {
-      await CalendarService.connectGoogleCalendar();
-      final events = await CalendarService.listUpcomingEvents(max: 8);
-      setState(() {
-        _calendarMsg = '연결됨';
-        _events = events
-            .map((e) =>
-                '${e.summary ?? '(제목 없음)'} · ${e.start?.dateTime?.toLocal() ?? e.start?.date}')
-            .toList();
-      });
-    } catch (e) {
-      setState(() {
-        _calendarMsg = '연결 실패: $e';
-      });
-    }
+    return upcoming
+        .map((t) => '${t['title'] ?? '(제목 없음)'} · ${t['due_date'] ?? ''}')
+        .toList();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('운영 / 완성도')),
-      body: FutureBuilder(
-        future: PlannerService.mentorSharePath(),
+      body: FutureBuilder<List<dynamic>>(
+        future: Future.wait([
+          PlannerService.mentorSharePath(),
+          _upcomingFromTodos(),
+        ]),
         builder: (context, snapshot) {
-          final share = snapshot.data ?? '/share';
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final share = snapshot.data![0] as String;
+          final events = snapshot.data![1] as List<String>;
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -69,18 +72,14 @@ class _OpsPageState extends State<OpsPage> {
                   subtitle: Text('현재 요약 공유 경로: $share'),
                 ),
               ),
-              Card(
+              const Card(
                 child: ListTile(
-                  leading: const Icon(Icons.calendar_month_outlined),
-                  title: const Text('캘린더 연동 (Google)'),
-                  subtitle: Text('상태: $_calendarMsg'),
-                  trailing: TextButton(
-                    onPressed: _connectGoogleCalendar,
-                    child: const Text('연결'),
-                  ),
+                  leading: Icon(Icons.calendar_month_outlined),
+                  title: Text('캘린더 연동 (외부 API 미사용 모드)'),
+                  subtitle: Text('Google/Apple 연동 없이 Todo 기반 일정만 표시합니다.'),
                 ),
               ),
-              if (_events.isNotEmpty)
+              if (events.isNotEmpty)
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(12),
@@ -90,7 +89,7 @@ class _OpsPageState extends State<OpsPage> {
                         const Text('다가오는 일정',
                             style: TextStyle(fontWeight: FontWeight.w700)),
                         const SizedBox(height: 8),
-                        ..._events.map((e) => Padding(
+                        ...events.map((e) => Padding(
                               padding: const EdgeInsets.symmetric(vertical: 3),
                               child: Text('• $e'),
                             )),
