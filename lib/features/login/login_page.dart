@@ -16,13 +16,6 @@ class _LoginPageState extends State<LoginPage> {
   bool _loading = false;
 
   @override
-  void initState() {
-    super.initState();
-    _idCtrl.text = 'admin';
-    _pwCtrl.text = 'admin';
-  }
-
-  @override
   void dispose() {
     _idCtrl.dispose();
     _pwCtrl.dispose();
@@ -77,8 +70,8 @@ class _LoginPageState extends State<LoginPage> {
                   TextField(
                     controller: _idCtrl,
                     decoration: const InputDecoration(
-                      labelText: '아이디 (또는 이메일)',
-                      hintText: '예: admin 또는 user@example.com',
+                      labelText: '이메일',
+                      hintText: '예: user@example.com',
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -129,8 +122,7 @@ class _LoginPageState extends State<LoginPage> {
                     child: const Text('Logout'),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                      '참고: 아이디만 입력하면 내부적으로 @guiculum.local 이메일로 변환해 Supabase 이메일 인증을 사용합니다.'),
+                  const Text('참고: Supabase 이메일 로그인 방식을 사용합니다.'),
                 ],
               ),
             ),

@@ -11,9 +11,7 @@ class AuthService {
   static User? currentUser() => _client.auth.currentUser;
 
   static String normalizeLoginId(String idOrEmail) {
-    final v = idOrEmail.trim();
-    if (v.contains('@')) return v;
-    return '$v@guiculum.local';
+    return idOrEmail.trim().toLowerCase();
   }
 
   static Future<void> signInWithGoogle() async {

@@ -77,6 +77,11 @@ class _SignupPageState extends State<SignupPage> {
           .showSnackBar(const SnackBar(content: Text('약관 동의가 필요합니다.')));
       return;
     }
+    if (!_idCtrl.text.trim().contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('회원가입은 이메일 형식으로 입력해주세요.')));
+      return;
+    }
     if (_pwCtrl.text != _pw2Ctrl.text) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('비밀번호 확인이 일치하지 않습니다.')));
@@ -137,8 +142,10 @@ class _SignupPageState extends State<SignupPage> {
                 children: [
                   TextField(
                     controller: _idCtrl,
-                    decoration:
-                        const InputDecoration(labelText: '아이디 (또는 이메일)'),
+                    decoration: const InputDecoration(
+                      labelText: '이메일',
+                      hintText: '예: hoya@example.com',
+                    ),
                   ),
                   const SizedBox(height: 8),
                   TextField(
