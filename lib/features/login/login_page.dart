@@ -36,6 +36,10 @@ class _LoginPageState extends State<LoginPage> {
     }
     if (m.contains('email not confirmed')) return '이메일 인증이 필요합니다.';
     if (m.contains('user already registered')) return '이미 가입된 계정입니다.';
+    if (m.contains('password should be at least')) {
+      return '비밀번호는 최소 6자 이상이어야 합니다.';
+    }
+    if (m.contains('weak password')) return '비밀번호가 너무 약합니다. 6자 이상으로 설정해주세요.';
     if (m.contains('password')) return '비밀번호 규칙을 확인해주세요.';
     return '요청 처리 중 오류가 발생했습니다.';
   }
@@ -60,7 +64,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login / Signup')),
+      appBar: AppBar(title: const Text('로그인')),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 560),
@@ -84,53 +88,30 @@ class _LoginPageState extends State<LoginPage> {
                     decoration: const InputDecoration(labelText: '비밀번호'),
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: _loading
-                              ? null
-                              : () => _run(
-                                    () async {
-                                      await AuthService.signInWithPassword(
-                                        idOrEmail: _idCtrl.text,
-                                        password: _pwCtrl.text,
-                                      );
-                                    },
-                                    ok: '로그인 성공',
-                                    goHome: true,
-                                  ),
-                          child: const Text('일반 로그인'),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: _loading
-                              ? null
-                              : () => _run(
-                                    () async {
-                                      await AuthService.signUpWithPassword(
-                                        idOrEmail: _idCtrl.text,
-                                        password: _pwCtrl.text,
-                                      );
-                                    },
-                                    ok: '회원가입 성공',
-                                    goHome: true,
-                                  ),
-                          child: const Text('회원가입'),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(
+                  ElevatedButton(
                     onPressed: _loading
                         ? null
-                        : () => _run(AuthService.ensureAdminAccount,
-                            ok: 'admin 계정 로그인 완료', goHome: true),
-                    icon: const Icon(Icons.admin_panel_settings),
-                    label: const Text('관리자 계정(admin/admin) 생성+로그인'),
+                        : () => _run(
+                              () async {
+                                await AuthService.signInWithPassword(
+                                  idOrEmail: _idCtrl.text,
+                                  password: _pwCtrl.text,
+                                );
+                              },
+                              ok: '로그인 성공',
+                              goHome: true,
+                            ),
+                    child: const Text('일반 로그인'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: _loading ? null : () => context.go('/signup'),
+                    child: const Text('계정이 없나요? 회원가입'),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    '비밀번호 규칙: 현재 Supabase 기본 최소 6자 이상',
+                    style: TextStyle(fontSize: 12),
                   ),
                   const Divider(height: 24),
                   ElevatedButton(

@@ -80,4 +80,16 @@ SUPABASE_ANON_KEY=YOUR_ANON_KEY
 
 ## 메모
 - Web/Android/iOS 실서비스 전환 시 redirect URI/딥링크 도메인 설정 필요
-- Supabase SQL(`supabase/sql/001_profiles.sql`, `002_seed_search_items.sql`, `003_planner_core.sql`)을 먼저 적용해야 핵심 플로우(가이드라인→커리큘럼→투두)가 동작
+- Supabase SQL(`supabase/sql/001_profiles.sql`, `002_seed_search_items.sql`, `003_planner_core.sql`, `004_auth_profile_trigger.sql`)을 먼저 적용해야 핵심 플로우(가이드라인→커리큘럼→투두)가 동작
+- Google/일반 회원가입 시 `auth.users` 생성과 함께 `profiles`가 자동 upsert 되도록 트리거 구성
+
+## MySQL 로컬 세팅(옵션)
+Supabase를 유지하면서 로컬 MySQL도 병행 가능:
+- 설치: `brew install mysql`
+- 실행: `brew services start mysql`
+- Workbench: `/Applications/MySQLWorkbench.app`
+- 기본 생성 정보
+  - DB: `guiculum`
+  - USER: `guiculum_user`
+  - PASSWORD: `guiculum123!`
+- 스키마 샘플: `supabase/sql/900_mysql_bootstrap.sql` (MySQL에서 실행)

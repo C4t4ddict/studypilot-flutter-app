@@ -4,6 +4,7 @@ import 'app_shell.dart';
 import '../features/home/home_page.dart';
 import '../services/auth_service.dart';
 import '../features/login/login_page.dart';
+import '../features/login/signup_page.dart';
 import '../features/search/search_page.dart';
 import '../features/search/search_detail_page.dart';
 import '../features/home/profile_page.dart';
@@ -20,16 +21,18 @@ final appRouter = GoRouter(
     final loc = state.matchedLocation;
     final isPublic = loc == '/' ||
         loc == '/login' ||
+        loc == '/signup' ||
         loc == '/search' ||
         loc.startsWith('/search/') ||
         loc == '/auth/callback';
 
     if (!loggedIn && !isPublic) return '/login';
-    if (loggedIn && loc == '/login') return '/';
+    if (loggedIn && (loc == '/login' || loc == '/signup')) return '/';
     return null;
   },
   routes: [
     GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+    GoRoute(path: '/signup', builder: (context, state) => const SignupPage()),
     GoRoute(
         path: '/auth/callback',
         builder: (context, state) => const AuthCallbackPage()),
