@@ -17,6 +17,9 @@ dependencies:
   share_plus: ^10.1.4
   qr_flutter: ^4.1.0
   http: ^1.2.2
+  google_sign_in: ^6.3.0
+  extension_google_sign_in_as_googleapis_auth: ^2.0.12
+  googleapis: ^13.2.0
 
 dev_dependencies:
   flutter_test:

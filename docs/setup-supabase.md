@@ -7,6 +7,8 @@ Supabase Dashboard → SQL Editor 에서 아래 순서로 실행:
 2. `supabase/sql/002_seed_search_items.sql`
 3. `supabase/sql/003_planner_core.sql`
 4. `supabase/sql/004_auth_profile_trigger.sql`  (Google/일반 회원가입 시 profiles 자동 생성)
+5. `supabase/sql/005_weekly_reviews.sql`
+6. `supabase/sql/006_growth_features.sql`
 
 > 이미 `todos` 테이블이 있고 status check가 `todo/done`만 허용 중이면 SQL Editor에서 아래를 추가 실행:
 ```sql

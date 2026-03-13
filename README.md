@@ -43,6 +43,7 @@ flutter run -d android                   # Android
 ```
 
 Supabase 초기화/시드는 `docs/setup-supabase.md` 참고.
+Google Calendar OAuth 설정은 `docs/google-calendar-oauth.md` 참고.
 
 ## 환경변수
 `.env`
@@ -55,12 +56,18 @@ SUPABASE_ANON_KEY=YOUR_ANON_KEY
 - `go_router` 라우팅 적용 (`/`, `/login`, `/search`, `/profile`, `/auth/callback`)
 - Auth 세션 스트림 구독 + signedIn 시 `profiles` 자동 upsert
 - 홈에서 로그인 상태 배지 + 로그인/로그아웃 스낵바 피드백
-- 홈에 대시보드 카드(내 프로필/최근 검색/세션 상태/핵심 플로우)
-  - 실시간 KPI: 검색 인덱스 항목 수, 최근 로그인 시각, guideline/curriculum/done todo 수
-- 핵심 화면 추가
+- 홈에 대시보드 카드(핵심 플로우/타임라인/오늘 할 일)
+- 핵심 화면
   - `/guidelines` (가이드라인 생성)
   - `/curriculums` (기간 기반 커리큘럼 생성)
   - `/todos` (실행 단위 todo 수동 추가/체크/날짜 지정)
+  - `/review` (주간 회고)
+  - `/templates` (직무 템플릿)
+  - `/insights` (리스크 인사이트)
+  - `/productivity` (Pomodoro/습관/자동 재계획)
+  - `/gamification` (streak/레벨/배지/히트맵)
+  - `/ai-assist` (AI 추천 MVP)
+  - `/ops` (CSV 백업/공유/운영 스캐폴드)
   - `/calendar` (날짜별 커리큘럼/투두 시각화)
 - 프로필 화면에서 닉네임 수정/저장 + pull-to-refresh
   - optimistic UI + 실행 취소(Undo)

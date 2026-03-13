@@ -13,6 +13,14 @@ import '../features/planner/guideline_page.dart';
 import '../features/planner/curriculum_page.dart';
 import '../features/planner/todo_page.dart';
 import '../features/planner/calendar_page.dart';
+import '../features/planner/review_page.dart';
+import '../features/planner/templates_page.dart';
+import '../features/planner/insights_page.dart';
+import '../features/planner/productivity_page.dart';
+import '../features/planner/gamification_page.dart';
+import '../features/planner/ops_page.dart';
+import '../features/planner/ai_assist_page.dart';
+import '../features/planner/career_page.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -56,6 +64,26 @@ final appRouter = GoRouter(
             path: '/curriculums',
             builder: (context, state) => const CurriculumPage()),
         GoRoute(path: '/todos', builder: (context, state) => const TodoPage()),
+        GoRoute(
+            path: '/review', builder: (context, state) => const ReviewPage()),
+        GoRoute(
+            path: '/templates',
+            builder: (context, state) => const TemplatesPage()),
+        GoRoute(
+            path: '/insights',
+            builder: (context, state) => const InsightsPage()),
+        GoRoute(
+            path: '/productivity',
+            builder: (context, state) => const ProductivityPage()),
+        GoRoute(
+            path: '/gamification',
+            builder: (context, state) => const GamificationPage()),
+        GoRoute(path: '/ops', builder: (context, state) => const OpsPage()),
+        GoRoute(
+            path: '/career', builder: (context, state) => const CareerPage()),
+        GoRoute(
+            path: '/ai-assist',
+            builder: (context, state) => const AiAssistPage()),
         GoRoute(
           path: '/calendar',
           builder: (context, state) => PlannerCalendarPage(
