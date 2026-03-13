@@ -43,6 +43,7 @@ class GuiculumApp extends StatelessWidget {
           builder: (context, mode, _) {
             return MaterialApp.router(
               title: 'GUICULUM',
+              debugShowCheckedModeBanner: false,
               theme: AppTheme.light(),
               darkTheme: AppTheme.dark(),
               themeMode: mode,

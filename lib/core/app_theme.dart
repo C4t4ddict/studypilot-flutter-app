@@ -24,6 +24,7 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      fontFamily: 'Pretendard',
       colorScheme: scheme,
       scaffoldBackgroundColor: AppColors.lightBg,
       cardTheme: const CardThemeData(
@@ -91,6 +92,7 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      fontFamily: 'Pretendard',
       colorScheme: scheme,
       scaffoldBackgroundColor: AppColors.darkBg,
       cardTheme: const CardThemeData(
