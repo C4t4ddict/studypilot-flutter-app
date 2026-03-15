@@ -1,4 +1,4 @@
-# STUDYPILOT_FLUTTER
+# StudyPilot_FLUTTER
 
 Flutter 단일 코드베이스로 Web + Mobile 프로토타입.
 
@@ -33,7 +33,7 @@ Flutter 단일 코드베이스로 Web + Mobile 프로토타입.
 
 ## 실행
 ```bash
-cd STUDYPILOT_FLUTTER
+cd StudyPilot_FLUTTER
 cp .env.example .env
 # .env에 Supabase URL/KEY 입력
 flutter pub get

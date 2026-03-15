@@ -1,4 +1,4 @@
-# Supabase Quick Setup (STUDYPILOT_FLUTTER)
+# Supabase Quick Setup (StudyPilot_FLUTTER)
 
 ## 1) SQL 실행
 Supabase Dashboard → SQL Editor 에서 아래 순서로 실행:

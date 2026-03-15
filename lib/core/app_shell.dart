@@ -66,7 +66,7 @@ class _AppShellState extends State<AppShell> {
           children: [
             const Icon(Icons.auto_awesome, size: 18),
             const SizedBox(width: 8),
-            const Text('STUDYPILOT'),
+            const Text('StudyPilot'),
             const SizedBox(width: 18),
             Expanded(
               child: ConstrainedBox(

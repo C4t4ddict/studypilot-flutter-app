@@ -82,7 +82,7 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
   Future<void> _shareCurrentState() async {
     final absolute =
         kIsWeb ? '${Uri.base.origin}${_sharePath()}' : _sharePath();
-    await Share.share('STUDYPILOT 캘린더 상태 공유\n$absolute');
+    await Share.share('StudyPilot 캘린더 상태 공유\n$absolute');
   }
 
   Future<void> _showShareQr() async {

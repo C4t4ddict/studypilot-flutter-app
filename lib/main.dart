@@ -42,7 +42,7 @@ class StudypilotApp extends StatelessWidget {
           valueListenable: themeModeNotifier,
           builder: (context, mode, _) {
             return MaterialApp.router(
-              title: 'STUDYPILOT',
+              title: 'StudyPilot',
               debugShowCheckedModeBanner: false,
               theme: AppTheme.light(),
               darkTheme: AppTheme.dark(),
