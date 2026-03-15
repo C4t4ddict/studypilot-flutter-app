@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 
 import '../../services/planner_service.dart';
 
-class GuidelinePage extends StatefulWidget {
-  const GuidelinePage({super.key});
+class RoadmapPage extends StatefulWidget {
+  const RoadmapPage({super.key});
 
   @override
-  State<GuidelinePage> createState() => _GuidelinePageState();
+  State<RoadmapPage> createState() => _RoadmapPageState();
 }
 
 class _GoalBlock {
@@ -29,7 +29,7 @@ class _GoalBlock {
       };
 }
 
-class _GuidelinePageState extends State<GuidelinePage> {
+class _RoadmapPageState extends State<RoadmapPage> {
   final _role = TextEditingController(text: 'Flutter Developer');
   final _title = TextEditingController();
   final _goalSummary = TextEditingController();
@@ -72,7 +72,7 @@ class _GuidelinePageState extends State<GuidelinePage> {
   Future<void> _create() async {
     if (_title.text.trim().isEmpty) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('가이드라인 제목을 입력해주세요.')));
+          .showSnackBar(const SnackBar(content: Text('로드맵 제목을 입력해주세요.')));
       return;
     }
 
@@ -85,7 +85,7 @@ class _GuidelinePageState extends State<GuidelinePage> {
       'goal_blocks': _blocks.map((b) => b.toJson()).toList(),
     };
 
-    await PlannerService.createGuideline(
+    await PlannerService.createRoadmap(
       role: _role.text.trim(),
       title: _title.text.trim(),
       notes: jsonEncode(payload),
@@ -144,7 +144,7 @@ class _GuidelinePageState extends State<GuidelinePage> {
       }
 
       await PlannerService.createCurriculum(
-        guidelineId: id,
+        roadmapId: id,
         title: 'Week ${i + 1} · $focus',
         start: ws,
         end: we,
@@ -161,9 +161,9 @@ class _GuidelinePageState extends State<GuidelinePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('1) Guideline Builder')),
+      appBar: AppBar(title: const Text('1) Roadmap Builder')),
       body: FutureBuilder(
-        future: PlannerService.listGuidelines(),
+        future: PlannerService.listRoadmaps(),
         builder: (context, snapshot) {
           final items = snapshot.data ?? const [];
           return Center(
@@ -172,7 +172,7 @@ class _GuidelinePageState extends State<GuidelinePage> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  const Text('새로운 가이드라인 생성',
+                  const Text('새로운 로드맵 생성',
                       style:
                           TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 10),
@@ -187,7 +187,7 @@ class _GuidelinePageState extends State<GuidelinePage> {
                   TextField(
                     controller: _title,
                     decoration: const InputDecoration(
-                      labelText: '가이드라인 제목',
+                      labelText: '로드맵 제목',
                       hintText: '예) 12주 Flutter 취업 준비 로드맵',
                     ),
                   ),
@@ -223,7 +223,7 @@ class _GuidelinePageState extends State<GuidelinePage> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  const Text('세부 가이드라인 (대목표/중목표/소목표)',
+                  const Text('세부 로드맵 (대목표/중목표/소목표)',
                       style: TextStyle(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 8),
                   ..._blocks.asMap().entries.map((entry) {
@@ -292,9 +292,9 @@ class _GuidelinePageState extends State<GuidelinePage> {
                   ),
                   const SizedBox(height: 8),
                   ElevatedButton(
-                      onPressed: _create, child: const Text('가이드라인 생성')),
+                      onPressed: _create, child: const Text('로드맵 생성')),
                   const Divider(height: 28),
-                  const Text('생성된 가이드라인',
+                  const Text('생성된 로드맵',
                       style:
                           TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 8),

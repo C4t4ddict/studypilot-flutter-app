@@ -9,7 +9,7 @@ import '../features/search/search_page.dart';
 import '../features/search/search_detail_page.dart';
 import '../features/home/profile_page.dart';
 import '../features/login/auth_callback_page.dart';
-import '../features/planner/guideline_page.dart';
+import '../features/planner/roadmap_page.dart';
 import '../features/planner/curriculum_page.dart';
 import '../features/planner/todo_page.dart';
 import '../features/planner/calendar_page.dart';
@@ -58,8 +58,8 @@ final appRouter = GoRouter(
         GoRoute(
             path: '/profile', builder: (context, state) => const ProfilePage()),
         GoRoute(
-            path: '/guidelines',
-            builder: (context, state) => const GuidelinePage()),
+            path: '/roadmaps',
+            builder: (context, state) => const RoadmapPage()),
         GoRoute(
             path: '/curriculums',
             builder: (context, state) => const CurriculumPage()),

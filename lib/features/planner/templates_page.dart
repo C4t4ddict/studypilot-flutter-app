@@ -28,7 +28,7 @@ class TemplatesPage extends StatelessWidget {
   ];
 
   Future<void> _apply(BuildContext context, Map<String, String> t) async {
-    await PlannerService.createGuideline(
+    await PlannerService.createRoadmap(
       role: t['role']!,
       title: t['title']!,
       notes: t['notes']!,

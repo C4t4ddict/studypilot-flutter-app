@@ -139,8 +139,8 @@ class _AppShellState extends State<AppShell> {
                           children: [
                             navItem(context, Icons.home_rounded, '홈', '/'),
                             const SizedBox(height: 10),
-                            navItem(context, Icons.rule_rounded, '가이드라인',
-                                '/guidelines'),
+                            navItem(context, Icons.rule_rounded, '로드맵',
+                                '/roadmaps'),
                             const SizedBox(height: 10),
                             navItem(context, Icons.event_note_rounded, '커리큘럼',
                                 '/curriculums'),

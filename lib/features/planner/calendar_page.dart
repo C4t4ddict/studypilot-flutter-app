@@ -518,8 +518,8 @@ class _MenuPanel extends StatelessWidget {
           _navIcon(
               context: context,
               icon: Icons.rule_rounded,
-              tooltip: '가이드라인',
-              path: '/guidelines'),
+              tooltip: '로드맵',
+              path: '/roadmaps'),
           const SizedBox(height: 10),
           _navIcon(
               context: context,

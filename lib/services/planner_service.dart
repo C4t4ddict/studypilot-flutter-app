@@ -49,26 +49,26 @@ class PlannerService {
     if (r.statusCode >= 400) throw Exception('API 오류: ${r.body}');
   }
 
-  static Future<List<Map<String, dynamic>>> listGuidelines() async {
-    if (_useMysqlApi) return _getList('/guidelines?user_id=1');
+  static Future<List<Map<String, dynamic>>> listRoadmaps() async {
+    if (_useMysqlApi) return _getList('/roadmaps?user_id=1');
     return (await _c
-            .from('guidelines')
+            .from('roadmaps')
             .select('*')
             .order('created_at', ascending: false))
         .cast<Map<String, dynamic>>();
   }
 
-  static Future<void> createGuideline(
+  static Future<void> createRoadmap(
       {required String role, required String title, String notes = ''}) async {
     if (_useMysqlApi) {
-      return _post('/guidelines', {
+      return _post('/roadmaps', {
         'user_id': 1,
         'target_role': role,
         'title': title,
         'notes': notes,
       });
     }
-    await _c.from('guidelines').insert({
+    await _c.from('roadmaps').insert({
       'user_id': _uid(),
       'target_role': role,
       'title': title,
@@ -80,20 +80,20 @@ class PlannerService {
     if (_useMysqlApi) return _getList('/curriculums?user_id=1');
     return (await _c
             .from('curriculums')
-            .select('*, guidelines(title,target_role)')
+            .select('*, roadmaps(title,target_role)')
             .order('start_date', ascending: true))
         .cast<Map<String, dynamic>>();
   }
 
   static Future<void> createCurriculum(
-      {required String guidelineId,
+      {required String roadmapId,
       required String title,
       required DateTime start,
       required DateTime end}) async {
     if (_useMysqlApi) {
       return _post('/curriculums', {
         'user_id': 1,
-        'guideline_id': int.tryParse(guidelineId) ?? 1,
+        'roadmap_id': int.tryParse(roadmapId) ?? 1,
         'title': title,
         'start_date': start.toIso8601String().substring(0, 10),
         'end_date': end.toIso8601String().substring(0, 10),
@@ -101,7 +101,7 @@ class PlannerService {
     }
     await _c.from('curriculums').insert({
       'user_id': _uid(),
-      'guideline_id': guidelineId,
+      'roadmap_id': roadmapId,
       'title': title,
       'start_date': start.toIso8601String().substring(0, 10),
       'end_date': end.toIso8601String().substring(0, 10),
@@ -207,24 +207,19 @@ class PlannerService {
     if (_useMysqlApi) {
       final m = await _getObj('/dashboard/kpi?user_id=1');
       return {
-        'guidelines': (m['guidelines'] ?? 0) as int,
+        'roadmaps': (m['roadmaps'] ?? 0) as int,
         'curriculums': (m['curriculums'] ?? 0) as int,
         'todos_done': (m['todos_done'] ?? 0) as int,
       };
     }
-    final gs =
-        await _c.from('guidelines').select('id').count(CountOption.exact);
+    final gs = await _c.from('roadmaps').select('id').count(CountOption.exact);
     final cs =
         await _c.from('curriculums').select('id').count(CountOption.exact);
     final ts = await _c.from('todos').select('id,status');
     final done = (ts as List)
         .where((e) => (e as Map<String, dynamic>)['status'] == 'done')
         .length;
-    return {
-      'guidelines': gs.count,
-      'curriculums': cs.count,
-      'todos_done': done
-    };
+    return {'roadmaps': gs.count, 'curriculums': cs.count, 'todos_done': done};
   }
 
   static Future<void> createWeeklyReview({
@@ -298,14 +293,14 @@ class PlannerService {
   }
 
   static Future<Map<String, dynamic>> goalProgress() async {
-    final gs = await listGuidelines();
+    final gs = await listRoadmaps();
     final cs = await listCurriculums();
     final ts = await listTodos();
     final done = ts.where((e) => (e['status'] ?? 'todo') == 'done').length;
     final rate = ts.isEmpty ? 0.0 : done / ts.length;
 
     return {
-      'guidelines': gs.length,
+      'roadmaps': gs.length,
       'curriculums': cs.length,
       'todos': ts.length,
       'done_todos': done,
@@ -467,15 +462,15 @@ class PlannerService {
 
   // ===== Export / Share =====
   static Future<void> exportSnapshotCsvToClipboard() async {
-    final guidelines = await listGuidelines();
+    final roadmaps = await listRoadmaps();
     final curriculums = await listCurriculums();
     final todos = await listTodos();
 
     final sb = StringBuffer();
     sb.writeln('section,id,title,status_or_notes,due_or_date');
-    for (final g in guidelines) {
+    for (final g in roadmaps) {
       sb.writeln(
-          'guideline,${g['id']},"${(g['title'] ?? '').toString().replaceAll('"', '""')}","${(g['notes'] ?? '').toString().replaceAll('"', '""')}",');
+          'roadmap,${g['id']},"${(g['title'] ?? '').toString().replaceAll('"', '""')}","${(g['notes'] ?? '').toString().replaceAll('"', '""')}",');
     }
     for (final c in curriculums) {
       sb.writeln(
@@ -491,7 +486,7 @@ class PlannerService {
 
   static Future<String> mentorSharePath() async {
     final kpi = await dashboardKpi();
-    return '/share?g=${kpi['guidelines']}&c=${kpi['curriculums']}&d=${kpi['todos_done']}';
+    return '/share?g=${kpi['roadmaps']}&c=${kpi['curriculums']}&d=${kpi['todos_done']}';
   }
 
   static Future<String> aiSuggestNextStep() async {

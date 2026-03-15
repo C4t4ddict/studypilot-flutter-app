@@ -30,7 +30,7 @@ class _AiAssistPageState extends State<AiAssistPage> {
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('가이드라인/커리큘럼/투두 추천',
+                    const Text('로드맵/커리큘럼/투두 추천',
                         style: TextStyle(fontWeight: FontWeight.w700)),
                     const SizedBox(height: 8),
                     Text(_msg),

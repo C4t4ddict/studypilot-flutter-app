@@ -10,7 +10,7 @@ class CurriculumPage extends StatefulWidget {
 }
 
 class _CurriculumPageState extends State<CurriculumPage> {
-  String? _guidelineId;
+  String? _roadmapId;
   final _title = TextEditingController();
   DateTime _start = DateTime.now();
   DateTime _end = DateTime.now().add(const Duration(days: 28));
@@ -22,9 +22,9 @@ class _CurriculumPageState extends State<CurriculumPage> {
   }
 
   Future<void> _create() async {
-    if (_guidelineId == null) return;
+    if (_roadmapId == null) return;
     await PlannerService.createCurriculum(
-      guidelineId: _guidelineId!,
+      roadmapId: _roadmapId!,
       title: _title.text.trim(),
       start: _start,
       end: _end,
@@ -38,15 +38,13 @@ class _CurriculumPageState extends State<CurriculumPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('2) Curriculum Planner')),
       body: FutureBuilder(
-        future: Future.wait([
-          PlannerService.listGuidelines(),
-          PlannerService.listCurriculums()
-        ]),
+        future: Future.wait(
+            [PlannerService.listRoadmaps(), PlannerService.listCurriculums()]),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
-          final guidelines = snapshot.data![0];
+          final roadmaps = snapshot.data![0];
           final curriculums = snapshot.data![1];
 
           return Center(
@@ -56,15 +54,14 @@ class _CurriculumPageState extends State<CurriculumPage> {
                 padding: const EdgeInsets.all(16),
                 children: [
                   DropdownButtonFormField<String>(
-                    initialValue: _guidelineId,
-                    items: guidelines
+                    initialValue: _roadmapId,
+                    items: roadmaps
                         .map<DropdownMenuItem<String>>((g) => DropdownMenuItem(
                             value: g['id'] as String,
                             child: Text(g['title'] ?? '-')))
                         .toList(),
-                    onChanged: (v) => setState(() => _guidelineId = v),
-                    decoration:
-                        const InputDecoration(labelText: '연결할 Guideline'),
+                    onChanged: (v) => setState(() => _roadmapId = v),
+                    decoration: const InputDecoration(labelText: '연결할 Roadmap'),
                   ),
                   TextField(
                       controller: _title,

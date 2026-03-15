@@ -17,7 +17,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   StreamSubscription? _authSub;
   Timer? _tick;
-  int _guidelineCount = 0;
+  int _roadmapCount = 0;
   int _curriculumCount = 0;
   int _doneTodoCount = 0;
   int _todayTodoCount = 0;
@@ -93,7 +93,7 @@ class _HomePageState extends State<HomePage> {
 
       if (!mounted) return;
       setState(() {
-        _guidelineCount = planner['guidelines'] ?? 0;
+        _roadmapCount = planner['roadmaps'] ?? 0;
         _curriculumCount = planner['curriculums'] ?? 0;
         _doneTodoCount = planner['todos_done'] ?? 0;
         _todayTodoCount = todayTodos;
@@ -159,7 +159,7 @@ class _HomePageState extends State<HomePage> {
               _statCard('Goal Progress', '$_doneTodoCount done',
                   '$_todayTodoCount due today'),
               _statCard('Milestones', '$_curriculumCount curriculums',
-                  '$_guidelineCount guidelines'),
+                  '$_roadmapCount roadmaps'),
               _statCard('Days Remaining', '$_daysRemaining days',
                   _nextCurriculumTitle),
             ],

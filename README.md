@@ -58,7 +58,7 @@ SUPABASE_ANON_KEY=YOUR_ANON_KEY
 - 홈에서 로그인 상태 배지 + 로그인/로그아웃 스낵바 피드백
 - 홈에 대시보드 카드(핵심 플로우/타임라인/오늘 할 일)
 - 핵심 화면
-  - `/guidelines` (가이드라인 생성)
+  - `/roadmaps` (로드맵 생성)
   - `/curriculums` (기간 기반 커리큘럼 생성)
   - `/todos` (실행 단위 todo 수동 추가/체크/날짜 지정)
   - `/review` (주간 회고)
@@ -87,7 +87,7 @@ SUPABASE_ANON_KEY=YOUR_ANON_KEY
 
 ## 메모
 - Web/Android/iOS 실서비스 전환 시 redirect URI/딥링크 도메인 설정 필요
-- Supabase SQL(`supabase/sql/001_profiles.sql`, `002_seed_search_items.sql`, `003_planner_core.sql`, `004_auth_profile_trigger.sql`)을 먼저 적용해야 핵심 플로우(가이드라인→커리큘럼→투두)가 동작
+- Supabase SQL(`supabase/sql/001_profiles.sql`, `002_seed_search_items.sql`, `003_planner_core.sql`, `004_auth_profile_trigger.sql`)을 먼저 적용해야 핵심 플로우(로드맵→커리큘럼→투두)가 동작
 - Google/일반 회원가입 시 `auth.users` 생성과 함께 `profiles`가 자동 upsert 되도록 트리거 구성
 
 ## MySQL 로컬 세팅(옵션)

@@ -9,6 +9,7 @@ Supabase Dashboard → SQL Editor 에서 아래 순서로 실행:
 4. `supabase/sql/004_auth_profile_trigger.sql`  (Google/일반 회원가입 시 profiles 자동 생성)
 5. `supabase/sql/005_weekly_reviews.sql`
 6. `supabase/sql/006_growth_features.sql`
+7. `supabase/sql/007_rename_guidelines_to_roadmaps.sql` (기존 guidelines 스키마를 roadmaps로 마이그레이션할 때)
 
 > 이미 `todos` 테이블이 있고 status check가 `todo/done`만 허용 중이면 SQL Editor에서 아래를 추가 실행:
 ```sql
