@@ -1,8 +1,8 @@
 -- MySQL bootstrap (for local fallback backend)
 -- Run in MySQL (not Supabase/Postgres)
 
-CREATE DATABASE IF NOT EXISTS guiculum;
-USE guiculum;
+CREATE DATABASE IF NOT EXISTS roadculum;
+USE roadculum;
 
 CREATE TABLE IF NOT EXISTS users (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,

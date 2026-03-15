@@ -21,11 +21,11 @@ Future<void> main() async {
   }
 
   await Supabase.initialize(url: url, anonKey: anonKey);
-  runApp(const GuiculumApp());
+  runApp(const RoadculumApp());
 }
 
-class GuiculumApp extends StatelessWidget {
-  const GuiculumApp({super.key});
+class RoadculumApp extends StatelessWidget {
+  const RoadculumApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +42,7 @@ class GuiculumApp extends StatelessWidget {
           valueListenable: themeModeNotifier,
           builder: (context, mode, _) {
             return MaterialApp.router(
-              title: 'GUICULUM',
+              title: 'ROADCULUM',
               debugShowCheckedModeBanner: false,
               theme: AppTheme.light(),
               darkTheme: AppTheme.dark(),

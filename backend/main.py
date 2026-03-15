@@ -7,16 +7,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = FastAPI(title="GUICULUM MySQL API")
+app = FastAPI(title="ROADCULUM MySQL API")
 
 
 def db_conn():
     return pymysql.connect(
         host=os.getenv("MYSQL_HOST", "127.0.0.1"),
         port=int(os.getenv("MYSQL_PORT", "3306")),
-        user=os.getenv("MYSQL_USER", "guiculum_user"),
-        password=os.getenv("MYSQL_PASSWORD", "guiculum123!"),
-        database=os.getenv("MYSQL_DB", "guiculum"),
+        user=os.getenv("MYSQL_USER", "roadculum_user"),
+        password=os.getenv("MYSQL_PASSWORD", "roadculum123!"),
+        database=os.getenv("MYSQL_DB", "roadculum"),
         cursorclass=pymysql.cursors.DictCursor,
         autocommit=True,
     )
