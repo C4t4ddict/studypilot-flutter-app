@@ -1,4 +1,4 @@
--- ROADCULUM core: roadmap -> curriculum -> todo
+-- STUDYPILOT core: roadmap -> curriculum -> todo
 
 create table if not exists public.roadmaps (
   id uuid primary key default gen_random_uuid(),

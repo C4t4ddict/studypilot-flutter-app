@@ -7,16 +7,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = FastAPI(title="ROADCULUM MySQL API")
+app = FastAPI(title="STUDYPILOT MySQL API")
 
 
 def db_conn():
     return pymysql.connect(
         host=os.getenv("MYSQL_HOST", "127.0.0.1"),
         port=int(os.getenv("MYSQL_PORT", "3306")),
-        user=os.getenv("MYSQL_USER", "roadculum_user"),
-        password=os.getenv("MYSQL_PASSWORD", "roadculum123!"),
-        database=os.getenv("MYSQL_DB", "roadculum"),
+        user=os.getenv("MYSQL_USER", "studypilot_user"),
+        password=os.getenv("MYSQL_PASSWORD", "studypilot123!"),
+        database=os.getenv("MYSQL_DB", "studypilot"),
         cursorclass=pymysql.cursors.DictCursor,
         autocommit=True,
     )
@@ -29,7 +29,7 @@ def ensure_user(user_id: int = 1):
     conn.close()
 
 
-class GuidelineIn(BaseModel):
+class RoadmapIn(BaseModel):
     user_id: int = 1
     target_role: str
     title: str
@@ -38,7 +38,7 @@ class GuidelineIn(BaseModel):
 
 class CurriculumIn(BaseModel):
     user_id: int = 1
-    guideline_id: int
+    roadmap_id: int
     title: str
     start_date: str
     end_date: str
@@ -71,24 +71,24 @@ def health():
         raise HTTPException(500, str(e))
 
 
-@app.get("/guidelines")
-def list_guidelines(user_id: int = 1):
+@app.get("/roadmaps")
+def list_roadmaps(user_id: int = 1):
     ensure_user(user_id)
     conn = db_conn()
     with conn.cursor() as cur:
-        cur.execute("SELECT * FROM guidelines WHERE user_id=%s ORDER BY created_at DESC", (user_id,))
+        cur.execute("SELECT * FROM roadmaps WHERE user_id=%s ORDER BY created_at DESC", (user_id,))
         rows = cur.fetchall()
     conn.close()
     return rows
 
 
-@app.post("/guidelines")
-def create_guideline(body: GuidelineIn):
+@app.post("/roadmaps")
+def create_roadmap(body: RoadmapIn):
     ensure_user(body.user_id)
     conn = db_conn()
     with conn.cursor() as cur:
         cur.execute(
-            "INSERT INTO guidelines(user_id,target_role,title,notes) VALUES(%s,%s,%s,%s)",
+            "INSERT INTO roadmaps(user_id,target_role,title,notes) VALUES(%s,%s,%s,%s)",
             (body.user_id, body.target_role, body.title, body.notes),
         )
         gid = cur.lastrowid
@@ -111,8 +111,8 @@ def create_curriculum(body: CurriculumIn):
     conn = db_conn()
     with conn.cursor() as cur:
         cur.execute(
-            "INSERT INTO curriculums(user_id,guideline_id,title,start_date,end_date) VALUES(%s,%s,%s,%s,%s)",
-            (body.user_id, body.guideline_id, body.title, body.start_date, body.end_date),
+            "INSERT INTO curriculums(user_id,roadmap_id,title,start_date,end_date) VALUES(%s,%s,%s,%s,%s)",
+            (body.user_id, body.roadmap_id, body.title, body.start_date, body.end_date),
         )
         cid = cur.lastrowid
     conn.close()
@@ -182,11 +182,11 @@ def bulk_move(body: BulkMoveIn):
 def kpi(user_id: int = 1):
     conn = db_conn()
     with conn.cursor() as cur:
-        cur.execute("SELECT COUNT(*) c FROM guidelines WHERE user_id=%s", (user_id,))
+        cur.execute("SELECT COUNT(*) c FROM roadmaps WHERE user_id=%s", (user_id,))
         g = cur.fetchone()["c"]
         cur.execute("SELECT COUNT(*) c FROM curriculums WHERE user_id=%s", (user_id,))
         c = cur.fetchone()["c"]
         cur.execute("SELECT COUNT(*) c FROM todos WHERE user_id=%s AND status='done'", (user_id,))
         d = cur.fetchone()["c"]
     conn.close()
-    return {"guidelines": g, "curriculums": c, "todos_done": d}
+    return {"roadmaps": g, "curriculums": c, "todos_done": d}

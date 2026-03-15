@@ -21,11 +21,11 @@ Future<void> main() async {
   }
 
   await Supabase.initialize(url: url, anonKey: anonKey);
-  runApp(const RoadculumApp());
+  runApp(const StudypilotApp());
 }
 
-class RoadculumApp extends StatelessWidget {
-  const RoadculumApp({super.key});
+class StudypilotApp extends StatelessWidget {
+  const StudypilotApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +42,7 @@ class RoadculumApp extends StatelessWidget {
           valueListenable: themeModeNotifier,
           builder: (context, mode, _) {
             return MaterialApp.router(
-              title: 'ROADCULUM',
+              title: 'STUDYPILOT',
               debugShowCheckedModeBanner: false,
               theme: AppTheme.light(),
               darkTheme: AppTheme.dark(),

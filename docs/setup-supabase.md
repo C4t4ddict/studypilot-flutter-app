@@ -1,4 +1,4 @@
-# Supabase Quick Setup (ROADCULUM_FLUTTER)
+# Supabase Quick Setup (STUDYPILOT_FLUTTER)
 
 ## 1) SQL 실행
 Supabase Dashboard → SQL Editor 에서 아래 순서로 실행:
@@ -25,7 +25,7 @@ Authentication → Providers → Google 활성화
 
 ### Redirect URL 추가
 - Web(local): `http://localhost:53001/auth/callback`
-- Mobile(deeplink): `roadculum://auth/callback`
+- Mobile(deeplink): `studypilot://auth/callback`
 
 > 포트가 다르면 실제 실행 포트 기준으로 web callback을 맞춰야 함.
 

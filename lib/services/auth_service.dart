@@ -17,7 +17,7 @@ class AuthService {
   static Future<void> signInWithGoogle() async {
     final redirectTo = kIsWeb
         ? '${Uri.base.origin}/auth/callback'
-        : 'roadculum://auth/callback';
+        : 'studypilot://auth/callback';
 
     await _client.auth.signInWithOAuth(
       OAuthProvider.google,

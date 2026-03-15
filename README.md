@@ -1,4 +1,4 @@
-# ROADCULUM_FLUTTER
+# STUDYPILOT_FLUTTER
 
 Flutter 단일 코드베이스로 Web + Mobile 프로토타입.
 
@@ -33,7 +33,7 @@ Flutter 단일 코드베이스로 Web + Mobile 프로토타입.
 
 ## 실행
 ```bash
-cd ROADCULUM_FLUTTER
+cd STUDYPILOT_FLUTTER
 cp .env.example .env
 # .env에 Supabase URL/KEY 입력
 flutter pub get
@@ -83,7 +83,7 @@ SUPABASE_ANON_KEY=YOUR_ANON_KEY
   - Todo 우선순위(low/medium/high) 및 캘린더 셀 완료율 미니바
 - OAuth redirect 분기
   - Web: `${Uri.base.origin}/auth/callback`
-  - Mobile: `roadculum://auth/callback`
+  - Mobile: `studypilot://auth/callback`
 
 ## 메모
 - Web/Android/iOS 실서비스 전환 시 redirect URI/딥링크 도메인 설정 필요
@@ -96,7 +96,7 @@ Supabase를 유지하면서 로컬 MySQL도 병행 가능:
 - 실행: `brew services start mysql`
 - Workbench: `/Applications/MySQLWorkbench.app`
 - 기본 생성 정보
-  - DB: `roadculum`
-  - USER: `roadculum_user`
-  - PASSWORD: `roadculum123!`
+  - DB: `studypilot`
+  - USER: `studypilot_user`
+  - PASSWORD: `studypilot123!`
 - 스키마 샘플: `supabase/sql/900_mysql_bootstrap.sql` (MySQL에서 실행)
