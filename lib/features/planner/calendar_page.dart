@@ -629,33 +629,40 @@ class _CalendarPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(12),
+    return Container(
+      margin: const EdgeInsets.all(12),
+      decoration: AppTheme.glassCard(),
+      padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Text(
+            '학습 캘린더',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 12),
           Row(
             children: [
               IconButton(
-                  onPressed: onPrevMonth, icon: const Icon(Icons.chevron_left)),
+                  onPressed: onPrevMonth, icon: const Icon(Icons.chevron_left_rounded)),
               Expanded(
                 child: Text(
                   '${displayMonth.year}년 ${displayMonth.month}월',
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                 ),
               ),
               IconButton(
                   onPressed: onNextMonth,
-                  icon: const Icon(Icons.chevron_right)),
+                  icon: const Icon(Icons.chevron_right_rounded)),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Expanded(
             child: SingleChildScrollView(
               child: Wrap(
-                spacing: 6,
-                runSpacing: 6,
+                spacing: 8,
+                runSpacing: 8,
                 children: visibleDays.map((d) {
                   final cCount = curriculums
                       .where((c) => isInRange(d, c['start_date'] as String?,
@@ -679,23 +686,32 @@ class _CalendarPanel extends StatelessWidget {
                       onTap: () => onSelectDay(d),
                       borderRadius: BorderRadius.circular(10),
                       child: Container(
-                        width: 46,
-                        height: 46,
+                        width: 54,
+                        height: 58,
                         decoration: BoxDecoration(
                           color: selected.year == d.year &&
                                   selected.month == d.month &&
                                   selected.day == d.day
-                              ? Colors.indigo.withValues(alpha: 0.14)
-                              : Colors.grey.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(10),
+                              ? const Color(0xFF0066FF)
+                              : Colors.white.withValues(alpha: 0.42),
+                          borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                              color: has ? Colors.indigo : Colors.transparent),
+                            color: has
+                                ? const Color(0xFF0066FF).withValues(alpha: 0.7)
+                                : Colors.white.withValues(alpha: 0.55),
+                          ),
                         ),
                         child: Stack(
                           children: [
                             Center(
                                 child: Text('${d.day}',
-                                    style: const TextStyle(fontSize: 12))),
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800,
+                                      color: selected.year == d.year && selected.month == d.month && selected.day == d.day
+                                          ? Colors.white
+                                          : AppColors.lightText,
+                                    ))),
                             if (has)
                               Positioned(
                                 right: 2,
@@ -708,7 +724,7 @@ class _CalendarPanel extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(8)),
                                   child: Text('${cCount + tCount}',
                                       style: const TextStyle(
-                                          color: Colors.white, fontSize: 9)),
+                                          color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700)),
                                 ),
                               ),
                             if (tCount > 0)
