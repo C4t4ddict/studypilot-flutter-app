@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../core/app_theme.dart';
 import '../../core/theme_controller.dart';
 import '../../services/planner_service.dart';
 
@@ -75,14 +76,14 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
     await Clipboard.setData(ClipboardData(text: absolute));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('링크 복사 완료')),
+      const SnackBar(content: Text('공유 링크 복사 완료')),
     );
   }
 
   Future<void> _shareCurrentState() async {
     final absolute =
         kIsWeb ? '${Uri.base.origin}${_sharePath()}' : _sharePath();
-    await Share.share('GUICULUM 캘린더 상태 공유\n$absolute');
+    await Share.share('스터디 파일럿 학습 캘린더 공유\n$absolute');
   }
 
   Future<void> _showShareQr() async {
@@ -188,7 +189,7 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Todo 수정'),
+        title: const Text('투두 수정'),
         content: TextField(
             controller: ctrl,
             decoration: const InputDecoration(labelText: '제목')),
@@ -393,7 +394,7 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
           icon: Icon(_sidebarExpanded ? Icons.menu_open : Icons.menu),
           onPressed: () => setState(() => _sidebarExpanded = !_sidebarExpanded),
         ),
-        title: const Text('Curriculum Calendar'),
+        title: const Text('학습 캘린더'),
         actions: [
           IconButton(
             tooltip: '라이트/다크 전환',
@@ -784,7 +785,7 @@ class _TodoPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Todo · ${selected.toIso8601String().substring(0, 10)}',
+          Text('선택 날짜 투두 · ${selected.toIso8601String().substring(0, 10)}',
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 10),
           DropdownButtonFormField<String>(
@@ -796,7 +797,7 @@ class _TodoPanel extends StatelessWidget {
                     ))
                 .toList(),
             onChanged: onCurriculumChanged,
-            decoration: const InputDecoration(labelText: '연결 Curriculum'),
+            decoration: const InputDecoration(labelText: '연결 커리큘럼'),
           ),
           const SizedBox(height: 8),
           Row(
@@ -840,7 +841,7 @@ class _TodoPanel extends StatelessWidget {
           const SizedBox(height: 10),
           Expanded(
             child: selectedTodos.isEmpty
-                ? const Center(child: Text('선택 날짜에 Todo가 없습니다.'))
+                ? const Center(child: Text('선택한 날짜에 등록된 투두가 없어.'))
                 : ListView.builder(
                     itemCount: selectedTodos.length,
                     itemBuilder: (_, i) {
