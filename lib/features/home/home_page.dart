@@ -4,9 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/app_theme.dart';
 import '../../services/auth_service.dart';
-import '../../services/search_service.dart';
 import '../../services/planner_service.dart';
+import '../../services/search_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -38,11 +39,11 @@ class _HomePageState extends State<HomePage> {
       if (state.event == AuthChangeEvent.signedIn) {
         _lastSignedInAt = DateTime.now();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('로그인 성공! 프로필 동기화 중...')),
+          const SnackBar(content: Text('로그인 성공! 프로필을 동기화하는 중이야.')),
         );
       } else if (state.event == AuthChangeEvent.signedOut) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('로그아웃 되었습니다.')),
+          const SnackBar(content: Text('로그아웃되었어.')),
         );
       }
       _loadKpi();
@@ -56,20 +57,18 @@ class _HomePageState extends State<HomePage> {
       final planner = await PlannerService.dashboardKpi();
       if (!mounted) return;
       setState(() {
-        _searchCount = count;
+        _searchCount = planner['search_count'] ?? count;
         _guidelineCount = planner['guidelines'] ?? 0;
         _curriculumCount = planner['curriculums'] ?? 0;
         _doneTodoCount = planner['todos_done'] ?? 0;
       });
-    } catch (_) {
-      // KPI는 실패해도 화면 전체를 깨지 않게 무시
-    }
+    } catch (_) {}
   }
 
   String _formatLastSignedIn() {
     if (_lastSignedInAt == null) return '-';
     final dt = _lastSignedInAt!;
-    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    return '${dt.year}.${dt.month.toString().padLeft(2, '0')}.${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -82,107 +81,420 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final user = AuthService.currentUser();
+    final progress = (_guidelineCount + _curriculumCount + _doneTodoCount) == 0
+        ? 0.18
+        : (_doneTodoCount / ((_curriculumCount * 3) + 1)).clamp(0.18, 0.92);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('GUICULUM')),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: Colors.transparent,
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(0, 8, 0, 120),
+        children: [
+          Container(
+            decoration: AppTheme.glassCard(highlight: true),
+            padding: const EdgeInsets.all(22),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '웰컴 백',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.deepBlue,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        user == null ? '학습 여정을 시작해볼까?' : '${user.email?.split('@').first ?? '파일럿'} 캡틴',
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.lightText,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        user == null
+                            ? '로그인하고 나만의 학습 항로를 설정해줘.'
+                            : '오늘의 비행 계획을 점검하고 다음 목표를 이어가자.',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          height: 1.5,
+                          color: AppColors.lightMuted,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          _MiniPill(
+                            icon: Icons.bolt_rounded,
+                            label: user == null ? '비로그인 상태' : '세션 활성',
+                          ),
+                          const SizedBox(width: 8),
+                          _MiniPill(
+                            icon: Icons.schedule_rounded,
+                            label: '최근 로그인 ${_formatLastSignedIn()}',
+                          ),
+                        ],
+                      )
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                _ProgressDial(progress: progress),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          Row(
             children: [
-              const Text('Architecture-first Flutter prototype',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: user == null ? Colors.grey : Colors.green,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(user == null ? '로그아웃 상태' : '로그인 상태'),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text('계정: ${user == null ? '-' : (user.email ?? user.id)}'),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  ElevatedButton(
-                      onPressed: () => context.go('/login'),
-                      child: const Text('Login')),
-                  ElevatedButton(
-                      onPressed: () => context.go('/search'),
-                      child: const Text('Search (Rx)')),
-                  ElevatedButton(
-                      onPressed: () => context.go('/profile'),
-                      child: const Text('Profile')),
-                  ElevatedButton(
-                      onPressed: () => context.go('/guidelines'),
-                      child: const Text('Guideline')),
-                  ElevatedButton(
-                      onPressed: () => context.go('/curriculums'),
-                      child: const Text('Curriculum')),
-                  ElevatedButton(
-                      onPressed: () => context.go('/todos'),
-                      child: const Text('Todo')),
-                  ElevatedButton(
-                      onPressed: () => context.go('/calendar'),
-                      child: const Text('Calendar')),
-                ],
-              ),
-              const SizedBox(height: 20),
-              const Text('Dashboard',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 8),
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.route),
-                  title: const Text('핵심 플로우 진행 현황'),
-                  subtitle: Text(
-                      'Guideline $_guidelineCount → Curriculum $_curriculumCount → Done Todo $_doneTodoCount'),
+              Expanded(
+                child: _KpiCard(
+                  label: '가이드라인',
+                  value: '$_guidelineCount',
+                  hint: '학습 방향 수',
+                  icon: Icons.route_rounded,
                 ),
               ),
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.person),
-                  title: const Text('내 프로필'),
-                  subtitle:
-                      Text(user == null ? '로그인 필요' : (user.email ?? user.id)),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.go('/profile'),
-                ),
-              ),
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.search),
-                  title: const Text('최근 검색'),
-                  subtitle: Text('검색 인덱스 항목 수: $_searchCount'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.go('/search'),
-                ),
-              ),
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.access_time),
-                  title: const Text('세션 상태'),
-                  subtitle: Text(
-                    user == null
-                        ? '현재 비로그인'
-                        : '현재 로그인 세션 활성\n최근 로그인: ${_formatLastSignedIn()}',
-                  ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _KpiCard(
+                  label: '커리큘럼',
+                  value: '$_curriculumCount',
+                  hint: '운항 중 계획',
+                  icon: Icons.map_rounded,
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _KpiCard(
+                  label: '완료한 투두',
+                  value: '$_doneTodoCount',
+                  hint: '오늘까지 누적',
+                  icon: Icons.check_circle_rounded,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _KpiCard(
+                  label: '검색 인덱스',
+                  value: '$_searchCount',
+                  hint: '탐색 가능한 자료',
+                  icon: Icons.search_rounded,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Container(
+            decoration: AppTheme.glassCard(),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '빠른 이동',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    _QuickActionButton(label: '가이드라인 만들기', icon: Icons.route_rounded, onTap: () => context.go('/guidelines')),
+                    _QuickActionButton(label: '커리큘럼 설계', icon: Icons.map_rounded, onTap: () => context.go('/curriculums')),
+                    _QuickActionButton(label: '투두 캘린더', icon: Icons.checklist_rounded, onTap: () => context.go('/todos')),
+                    _QuickActionButton(label: '학습 캘린더', icon: Icons.calendar_month_rounded, onTap: () => context.go('/calendar')),
+                    _QuickActionButton(label: '자료 검색', icon: Icons.search_rounded, onTap: () => context.go('/search')),
+                    _QuickActionButton(label: '마이페이지', icon: Icons.person_rounded, onTap: () => context.go('/profile')),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          Container(
+            decoration: AppTheme.glassCard(),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '비행 현황',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 14),
+                _StatusTile(
+                  icon: Icons.route_rounded,
+                  title: '핵심 플로우',
+                  subtitle: '가이드라인 $_guidelineCount → 커리큘럼 $_curriculumCount → 완료된 투두 $_doneTodoCount',
+                ),
+                const SizedBox(height: 10),
+                _StatusTile(
+                  icon: Icons.person_outline_rounded,
+                  title: '프로필 상태',
+                  subtitle: user == null ? '로그인이 필요해.' : (user.email ?? user.id),
+                  onTap: () => context.go('/profile'),
+                ),
+                const SizedBox(height: 10),
+                _StatusTile(
+                  icon: Icons.search_rounded,
+                  title: '탐색 상태',
+                  subtitle: '검색 인덱스 항목 수 $_searchCount개',
+                  onTap: () => context.go('/search'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _MiniPill({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.42),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.65)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: AppColors.deepBlue),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.lightText,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProgressDial extends StatelessWidget {
+  final double progress;
+  const _ProgressDial({required this.progress});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 108,
+      height: 108,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          SizedBox(
+            width: 108,
+            height: 108,
+            child: CircularProgressIndicator(
+              value: progress,
+              strokeWidth: 10,
+              backgroundColor: Colors.white.withValues(alpha: 0.35),
+              valueColor: const AlwaysStoppedAnimation(Color(0xFF0066FF)),
+            ),
+          ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${(progress * 100).round()}%',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.lightText,
+                ),
+              ),
+              const SizedBox(height: 2),
+              const Text(
+                '현재 고도',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.lightMuted,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _KpiCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final String hint;
+  final IconData icon;
+  const _KpiCard({
+    required this.label,
+    required this.value,
+    required this.hint,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: AppTheme.glassCard(),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.48),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(icon, color: AppColors.primaryStrong),
+          ),
+          const SizedBox(height: 14),
+          Text(label,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.lightMuted,
+              )),
+          const SizedBox(height: 6),
+          Text(value,
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w900,
+                color: AppColors.lightText,
+              )),
+          const SizedBox(height: 4),
+          Text(hint,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.lightMuted,
+              )),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickActionButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  const _QuickActionButton(
+      {required this.label, required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.42),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.65)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: AppColors.primaryStrong),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                color: AppColors.lightText,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback? onTap;
+  const _StatusTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.34),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, color: AppColors.primaryStrong),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.lightText)),
+                  const SizedBox(height: 4),
+                  Text(subtitle,
+                      style: const TextStyle(
+                          fontSize: 12.5,
+                          height: 1.45,
+                          color: AppColors.lightMuted)),
+                ],
+              ),
+            ),
+            if (onTap != null)
+              const Icon(Icons.chevron_right_rounded, color: AppColors.lightMuted),
+          ],
         ),
       ),
     );
