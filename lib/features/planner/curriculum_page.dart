@@ -183,6 +183,28 @@ class _CurriculumPageState extends State<CurriculumPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const Text('현재 단계 요약', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.34),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.map_rounded, color: AppColors.primaryStrong),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              '연결 가능한 가이드라인 ${guidelines.length}개, 생성된 커리큘럼 ${curriculums.length}개야. 이제 실행 단위 투두로 내려가면 돼.',
+                              style: const TextStyle(fontSize: 13, height: 1.5, color: AppColors.lightText),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     const Text('다음 단계로 이어가기', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
                     const SizedBox(height: 10),
                     const Text(

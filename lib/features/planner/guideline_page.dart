@@ -115,6 +115,28 @@ class _GuidelinePageState extends State<GuidelinePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const Text('현재 단계 요약', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.34),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.route_rounded, color: AppColors.primaryStrong),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              '지금까지 만든 가이드라인 ${items.length}개. 다음엔 이 방향을 기간형 커리큘럼으로 바꾸면 돼.',
+                              style: const TextStyle(fontSize: 13, height: 1.5, color: AppColors.lightText),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     const Text('다음 단계로 이어가기', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
                     const SizedBox(height: 10),
                     const Text(
