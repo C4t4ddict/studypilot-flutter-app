@@ -120,6 +120,14 @@ class _TodoPageState extends State<TodoPage> {
           final progressCount = curriculumTodos.where((t) => (t['status'] ?? 'todo') == 'in_progress').length;
           final todoCount = curriculumTodos.where((t) => (t['status'] ?? 'todo') == 'todo').length;
           final weekTodos = curriculumTodos.where((t) => visibleDays.any((d) => _sameDay(d, t['due_date'] as String?))).toList();
+          final today = DateTime.now();
+          final todayTodos = curriculumTodos.where((t) => _sameDay(today, t['due_date'] as String?)).toList();
+          final overdueTodos = curriculumTodos.where((t) {
+            final due = DateTime.tryParse((t['due_date'] ?? '').toString());
+            if (due == null) return false;
+            final status = (t['status'] ?? 'todo').toString();
+            return DateTime(due.year, due.month, due.day).isBefore(DateTime(today.year, today.month, today.day)) && status != 'done';
+          }).toList();
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(0, 8, 0, 120),
@@ -232,6 +240,30 @@ class _TodoPageState extends State<TodoPage> {
                       ),
                     ),
                     const SizedBox(height: 14),
+                    if (todayTodos.isNotEmpty || overdueTodos.isNotEmpty) ...[
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.45)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('실행 리마인드', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.lightText)),
+                            const SizedBox(height: 8),
+                            Text(
+                              overdueTodos.isNotEmpty
+                                  ? '밀린 일정 ${overdueTodos.length}개가 있어. 오늘 일정 전에 먼저 정리해두는 게 좋아.'
+                                  : '오늘 일정 ${todayTodos.length}개가 잡혀 있어. 지금 바로 하나씩 진행해보자.',
+                              style: const TextStyle(fontSize: 13, height: 1.5, color: AppColors.lightMuted),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                    ],
                     Row(
                       children: [
                         Expanded(
