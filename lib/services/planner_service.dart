@@ -122,4 +122,29 @@ class PlannerService {
       'todos_done': done
     };
   }
+
+  static Future<Map<String, dynamic>> flowSummary() async {
+    final guidelines = await listGuidelines();
+    final curriculums = await listCurriculums();
+    final todos = await listTodos();
+
+    final linkedGuidelineIds = curriculums
+        .map((c) => c['guideline_id'] as String?)
+        .whereType<String>()
+        .toSet();
+    final linkedCurriculumIds = todos
+        .map((t) => t['curriculum_id'] as String?)
+        .whereType<String>()
+        .toSet();
+    final doneTodos = todos.where((t) => (t['status'] ?? 'todo') == 'done').length;
+
+    return {
+      'guidelineCount': guidelines.length,
+      'curriculumCount': curriculums.length,
+      'todoCount': todos.length,
+      'doneTodoCount': doneTodos,
+      'guidelinesWithCurriculum': linkedGuidelineIds.length,
+      'curriculumsWithTodo': linkedCurriculumIds.length,
+    };
+  }
 }
