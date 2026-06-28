@@ -4,17 +4,54 @@ import 'package:flutter/services.dart';
 import '../../core/app_theme.dart';
 import '../../services/search_service.dart';
 
-class SearchDetailPage extends StatelessWidget {
+class SearchDetailPage extends StatefulWidget {
   final String itemId;
 
   const SearchDetailPage({super.key, required this.itemId});
+
+  @override
+  State<SearchDetailPage> createState() => _SearchDetailPageState();
+}
+
+class _SearchDetailPageState extends State<SearchDetailPage> {
+  bool _bookmarked = false;
+  bool _bookmarkLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBookmarkState();
+  }
+
+  Future<void> _loadBookmarkState() async {
+    final bookmarked = await SearchService.isBookmarked(widget.itemId);
+    if (!mounted) return;
+    setState(() {
+      _bookmarked = bookmarked;
+      _bookmarkLoading = false;
+    });
+  }
+
+  Future<void> _toggleBookmark(SearchItemDto item) async {
+    await SearchService.toggleBookmark(item);
+    if (!mounted) return;
+    setState(() => _bookmarked = !_bookmarked);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_bookmarked ? '관심 자료에 저장했어.' : '관심 자료에서 뺐어.'),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: FutureBuilder(
-        future: SearchService.getSearchItemById(itemId),
+        future: Future.wait([
+          SearchService.getSearchItemById(widget.itemId),
+          SearchService.getBookmarks(),
+        ]),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -30,7 +67,8 @@ class SearchDetailPage extends StatelessWidget {
             );
           }
 
-          final item = snapshot.data;
+          final item = snapshot.data?[0] as SearchItemDto?;
+          final bookmarks = (snapshot.data?[1] as List<SearchBookmarkDto>?) ?? const [];
           if (item == null) {
             return const Center(child: Text('해당 항목을 찾지 못했어.'));
           }
@@ -67,13 +105,9 @@ class SearchDetailPage extends StatelessWidget {
                           },
                         ),
                         _ActionChip(
-                          icon: Icons.bookmark_border_rounded,
-                          label: '관심 자료로 표시',
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('북마크 기능은 다음 단계에서 연결할게.')),
-                            );
-                          },
+                          icon: _bookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                          label: _bookmarkLoading ? '불러오는 중...' : (_bookmarked ? '관심 자료 해제' : '관심 자료 저장'),
+                          onTap: _bookmarkLoading ? null : () => _toggleBookmark(item),
                         ),
                       ],
                     ),
@@ -95,6 +129,30 @@ class SearchDetailPage extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(height: 18),
+              Container(
+                decoration: AppTheme.glassCard(),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('관심 자료 ${bookmarks.length}개', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 12),
+                    if (bookmarks.isEmpty)
+                      const Text('아직 저장한 검색 자료가 없어. 필요한 항목을 모아두면 학습 흐름 연결할 때 편해져.')
+                    else
+                      ...bookmarks.take(3).map(
+                        (bookmark) => Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _InfoRow(
+                            label: bookmark.title,
+                            value: bookmark.subtitle ?? bookmark.id,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ],
           );
         },
@@ -106,7 +164,7 @@ class SearchDetailPage extends StatelessWidget {
 class _ActionChip extends StatelessWidget {
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   const _ActionChip({required this.icon, required this.label, required this.onTap});
 
   @override
@@ -114,20 +172,23 @@ class _ActionChip extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(999),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.42),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.65)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: AppColors.primaryStrong),
-            const SizedBox(width: 8),
-            Text(label, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.lightText)),
-          ],
+      child: Opacity(
+        opacity: onTap == null ? 0.5 : 1,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.42),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.65)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: AppColors.primaryStrong),
+              const SizedBox(width: 8),
+              Text(label, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.lightText)),
+            ],
+          ),
         ),
       ),
     );
