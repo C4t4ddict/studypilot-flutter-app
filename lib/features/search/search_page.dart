@@ -19,6 +19,7 @@ class _SearchPageState extends State<SearchPage> {
   final _searchCtrl = TextEditingController();
   late final StreamSubscription<List<SearchItemDto>> _sub;
   List<SearchItemDto> _results = [];
+  List<String> _recentQueries = [];
   bool _loading = false;
   String? _error;
   String _lastQuery = '';
@@ -26,6 +27,7 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void initState() {
     super.initState();
+    _loadRecentQueries();
     _sub = _querySubject
         .debounceTime(const Duration(milliseconds: 350))
         .distinct()
@@ -55,8 +57,16 @@ class _SearchPageState extends State<SearchPage> {
     });
   }
 
+  Future<void> _loadRecentQueries() async {
+    final recent = await SearchService.getRecentQueries();
+    if (!mounted) return;
+    setState(() => _recentQueries = recent);
+  }
+
   Future<List<SearchItemDto>> _search(String query) async {
     if (query.trim().isEmpty) return [];
+    await SearchService.saveRecentQuery(query);
+    _loadRecentQueries();
     try {
       return await SearchService.searchItems(query);
     } catch (_) {
@@ -70,6 +80,15 @@ class _SearchPageState extends State<SearchPage> {
         ),
       );
     }
+  }
+
+  void _applyRecentQuery(String query) {
+    _searchCtrl.text = query;
+    _querySubject.add(query);
+    setState(() {
+      _lastQuery = query;
+      _error = null;
+    });
   }
 
   @override
@@ -131,6 +150,32 @@ class _SearchPageState extends State<SearchPage> {
                       setState(() {});
                     },
                   ),
+                  if (_recentQueries.isNotEmpty) ...[
+                    const SizedBox(height: 14),
+                    const Text('최근 검색', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.lightText)),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _recentQueries
+                          .map(
+                            (query) => InkWell(
+                              onTap: () => _applyRecentQuery(query),
+                              borderRadius: BorderRadius.circular(999),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.34),
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(color: Colors.white.withValues(alpha: 0.55)),
+                                ),
+                                child: Text(query, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.lightText)),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
                 ],
               ),
             ),
