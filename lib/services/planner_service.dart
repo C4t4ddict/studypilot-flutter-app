@@ -147,4 +147,49 @@ class PlannerService {
       'curriculumsWithTodo': linkedCurriculumIds.length,
     };
   }
+
+  static Future<Map<String, dynamic>> dashboardAnalytics() async {
+    final curriculums = await listCurriculums();
+    final todos = await listTodos();
+    final now = DateTime.now();
+    final todayKey = now.toIso8601String().substring(0, 10);
+    final weekKeys = List.generate(7, (i) {
+      final d = DateTime(now.year, now.month, now.day - (6 - i));
+      return d.toIso8601String().substring(0, 10);
+    });
+
+    final done = todos.where((t) => (t['status'] ?? 'todo') == 'done').length;
+    final inProgress = todos.where((t) => (t['status'] ?? 'todo') == 'in_progress').length;
+    final pending = todos.where((t) => (t['status'] ?? 'todo') == 'todo').length;
+    final todayTodos = todos.where((t) => t['due_date'] == todayKey).length;
+    final todayDone = todos.where((t) => t['due_date'] == todayKey && (t['status'] ?? 'todo') == 'done').length;
+    final weekActivity = weekKeys
+        .map((key) => {
+              'date': key,
+              'count': todos.where((t) => t['due_date'] == key).length,
+            })
+        .toList();
+
+    final curriculumProgress = curriculums.map((c) {
+      final items = todos.where((t) => t['curriculum_id'] == c['id']).toList();
+      final itemsDone = items.where((t) => (t['status'] ?? 'todo') == 'done').length;
+      return {
+        'title': c['title'] ?? '-',
+        'total': items.length,
+        'done': itemsDone,
+        'progress': items.isEmpty ? 0.0 : itemsDone / items.length,
+      };
+    }).toList();
+
+    return {
+      'todoTotal': todos.length,
+      'todoDone': done,
+      'todoInProgress': inProgress,
+      'todoPending': pending,
+      'todayTotal': todayTodos,
+      'todayDone': todayDone,
+      'weekActivity': weekActivity,
+      'curriculumProgress': curriculumProgress,
+    };
+  }
 }
