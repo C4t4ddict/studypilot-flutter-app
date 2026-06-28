@@ -127,6 +127,26 @@ class _TodoPageState extends State<TodoPage> {
                       style: TextStyle(fontSize: 14, height: 1.6, color: AppColors.lightMuted),
                     ),
                     const SizedBox(height: 18),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.34),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.checklist_rounded, color: AppColors.primaryStrong),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              '이 단계에서는 커리큘럼을 선택한 뒤 날짜별 투두를 실제 실행 단위로 굴리면 돼.',
+                              style: TextStyle(fontSize: 13, height: 1.5, color: AppColors.lightText),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
                     DropdownButtonFormField<String>(
                       initialValue: _curriculumId,
                       items: curriculums

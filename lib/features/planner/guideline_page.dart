@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/app_theme.dart';
 import '../../services/planner_service.dart';
@@ -102,6 +103,53 @@ class _GuidelinePageState extends State<GuidelinePage> {
                         onPressed: _saving ? null : _create,
                         icon: const Icon(Icons.flight_takeoff_rounded),
                         label: Text(_saving ? '생성 중...' : '가이드라인 생성하기'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              Container(
+                decoration: AppTheme.glassCard(),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('현재 단계 요약', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.34),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.route_rounded, color: AppColors.primaryStrong),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              '지금까지 만든 가이드라인 ${items.length}개. 다음엔 이 방향을 기간형 커리큘럼으로 바꾸면 돼.',
+                              style: const TextStyle(fontSize: 13, height: 1.5, color: AppColors.lightText),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('다음 단계로 이어가기', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 10),
+                    const Text(
+                      '가이드라인을 만들었으면 이제 기간이 보이는 커리큘럼으로 연결해서 실제 학습 항로를 잡아줘.',
+                      style: TextStyle(fontSize: 13, height: 1.5, color: AppColors.lightMuted),
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => context.go('/curriculums'),
+                        icon: const Icon(Icons.map_rounded),
+                        label: const Text('커리큘럼 설계로 이동'),
                       ),
                     ),
                   ],
