@@ -15,6 +15,7 @@ class _CurriculumPageState extends State<CurriculumPage> {
   final _title = TextEditingController();
   DateTime _start = DateTime.now();
   DateTime _end = DateTime.now().add(const Duration(days: 28));
+  bool _saving = false;
 
   @override
   void dispose() {
@@ -23,19 +24,44 @@ class _CurriculumPageState extends State<CurriculumPage> {
   }
 
   Future<void> _create() async {
-    if (_guidelineId == null) return;
-    await PlannerService.createCurriculum(
-      guidelineId: _guidelineId!,
-      title: _title.text.trim(),
-      start: _start,
-      end: _end,
-    );
-    _title.clear();
-    if (mounted) setState(() {});
+    if (_guidelineId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('먼저 가이드라인을 선택해줘.')),
+      );
+      return;
+    }
+    if (_title.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('커리큘럼 제목을 입력해줘.')),
+      );
+      return;
+    }
+    if (_end.isBefore(_start)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('종료일은 시작일보다 뒤여야 해.')),
+      );
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      await PlannerService.createCurriculum(
+        guidelineId: _guidelineId!,
+        title: _title.text.trim(),
+        start: _start,
+        end: _end,
+      );
+      _title.clear();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('커리큘럼을 생성했어.')),
+      );
+      setState(() {});
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
-  String _fmt(DateTime date) =>
-      '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}';
+  String _fmt(DateTime date) => '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context) {
@@ -62,51 +88,25 @@ class _CurriculumPageState extends State<CurriculumPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      '비행 계획 설계',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.deepBlue,
-                      ),
-                    ),
+                    const Text('비행 계획 설계', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.deepBlue)),
                     const SizedBox(height: 8),
-                    const Text(
-                      '커리큘럼 플래너',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.lightText,
-                      ),
-                    ),
+                    const Text('커리큘럼 플래너', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: AppColors.lightText)),
                     const SizedBox(height: 10),
                     const Text(
                       '가이드라인을 선택하고 학습 기간을 정해서, 일정이 보이는 실제 커리큘럼으로 연결해줘.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        height: 1.6,
-                        color: AppColors.lightMuted,
-                      ),
+                      style: TextStyle(fontSize: 14, height: 1.6, color: AppColors.lightMuted),
                     ),
                     const SizedBox(height: 18),
                     DropdownButtonFormField<String>(
                       initialValue: _guidelineId,
                       items: guidelines
-                          .map<DropdownMenuItem<String>>(
-                            (g) => DropdownMenuItem(
-                              value: g['id'] as String,
-                              child: Text(g['title'] ?? '-'),
-                            ),
-                          )
+                          .map<DropdownMenuItem<String>>((g) => DropdownMenuItem(value: g['id'] as String, child: Text(g['title'] ?? '-')))
                           .toList(),
                       onChanged: (v) => setState(() => _guidelineId = v),
                       decoration: const InputDecoration(labelText: '연결할 가이드라인'),
                     ),
                     const SizedBox(height: 12),
-                    TextField(
-                      controller: _title,
-                      decoration: const InputDecoration(labelText: '커리큘럼 제목'),
-                    ),
+                    TextField(controller: _title, decoration: const InputDecoration(labelText: '커리큘럼 제목')),
                     const SizedBox(height: 14),
                     Row(
                       children: [
@@ -152,17 +152,12 @@ class _CurriculumPageState extends State<CurriculumPage> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.flight_rounded,
-                              color: AppColors.primaryStrong),
+                          const Icon(Icons.flight_rounded, color: AppColors.primaryStrong),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              '총 ${( _end.difference(_start).inDays + 1).clamp(1, 999 )}일 일정으로 항로를 설계하고 있어.',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.lightText,
-                              ),
+                              '총 ${(_end.difference(_start).inDays + 1).clamp(1, 999)}일 일정으로 항로를 설계하고 있어.',
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.lightText),
                             ),
                           ),
                         ],
@@ -172,9 +167,9 @@ class _CurriculumPageState extends State<CurriculumPage> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: _create,
+                        onPressed: _saving ? null : _create,
                         icon: const Icon(Icons.map_rounded),
-                        label: const Text('커리큘럼 생성하기'),
+                        label: Text(_saving ? '생성 중...' : '커리큘럼 생성하기'),
                       ),
                     ),
                   ],
@@ -189,30 +184,14 @@ class _CurriculumPageState extends State<CurriculumPage> {
                   children: [
                     Row(
                       children: [
-                        const Expanded(
-                          child: Text(
-                            '생성된 커리큘럼',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
+                        const Expanded(child: Text('생성된 커리큘럼', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.42),
                             borderRadius: BorderRadius.circular(999),
                           ),
-                          child: Text(
-                            '${curriculums.length}개',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.deepBlue,
-                            ),
-                          ),
+                          child: Text('${curriculums.length}개', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.deepBlue)),
                         ),
                       ],
                     ),
@@ -224,37 +203,16 @@ class _CurriculumPageState extends State<CurriculumPage> {
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.36),
                           borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.62)),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.62)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              c['title'] ?? '-',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.lightText,
-                              ),
-                            ),
+                            Text(c['title'] ?? '-', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.lightText)),
                             const SizedBox(height: 8),
-                            Text(
-                              '${c['start_date']} ~ ${c['end_date']}',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.deepBlue,
-                              ),
-                            ),
+                            Text('${c['start_date']} ~ ${c['end_date']}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.deepBlue)),
                             const SizedBox(height: 8),
-                            Text(
-                              '연결 가이드라인: ${((c['guidelines'] ?? {})['title'] ?? '-')}',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: AppColors.lightMuted,
-                              ),
-                            ),
+                            Text('연결 가이드라인: ${((c['guidelines'] ?? {})['title'] ?? '-')}', style: const TextStyle(fontSize: 13, color: AppColors.lightMuted)),
                           ],
                         ),
                       ),
@@ -267,10 +225,7 @@ class _CurriculumPageState extends State<CurriculumPage> {
                           color: Colors.white.withValues(alpha: 0.34),
                           borderRadius: BorderRadius.circular(18),
                         ),
-                        child: const Text(
-                          '아직 커리큘럼이 없어. 가이드라인을 바탕으로 첫 학습 일정을 만들어보자.',
-                          style: TextStyle(color: AppColors.lightMuted),
-                        ),
+                        child: const Text('아직 커리큘럼이 없어. 가이드라인을 바탕으로 첫 학습 일정을 만들어보자.', style: TextStyle(color: AppColors.lightMuted)),
                       ),
                   ],
                 ),
@@ -287,11 +242,7 @@ class _DateCard extends StatelessWidget {
   final String label;
   final String value;
   final VoidCallback onTap;
-  const _DateCard({
-    required this.label,
-    required this.value,
-    required this.onTap,
-  });
+  const _DateCard({required this.label, required this.value, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -308,29 +259,14 @@ class _DateCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: AppColors.lightMuted,
-              ),
-            ),
+            Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.lightMuted)),
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(Icons.calendar_today_rounded,
-                    size: 16, color: AppColors.primaryStrong),
+                const Icon(Icons.calendar_today_rounded, size: 16, color: AppColors.primaryStrong),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    value,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.lightText,
-                    ),
-                  ),
+                  child: Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.lightText)),
                 ),
               ],
             ),

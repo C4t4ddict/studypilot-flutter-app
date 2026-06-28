@@ -17,6 +17,7 @@ class _TodoPageState extends State<TodoPage> {
   DateTime _displayMonth = DateTime(DateTime.now().year, DateTime.now().month, 1);
   String _viewMode = 'month';
   String _priority = 'medium';
+  bool _saving = false;
 
   @override
   void dispose() {
@@ -25,15 +26,35 @@ class _TodoPageState extends State<TodoPage> {
   }
 
   Future<void> _create() async {
-    if (_curriculumId == null || _title.text.trim().isEmpty) return;
-    await PlannerService.createTodo(
-      curriculumId: _curriculumId!,
-      title: _title.text.trim(),
-      dueDate: _selectedDate,
-      priority: _priority,
-    );
-    _title.clear();
-    if (mounted) setState(() {});
+    if (_curriculumId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('먼저 커리큘럼을 선택해줘.')),
+      );
+      return;
+    }
+    if (_title.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('투두 제목을 입력해줘.')),
+      );
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      await PlannerService.createTodo(
+        curriculumId: _curriculumId!,
+        title: _title.text.trim(),
+        dueDate: _selectedDate,
+        priority: _priority,
+      );
+      _title.clear();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('선택한 날짜에 투두를 추가했어.')),
+      );
+      setState(() {});
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   bool _sameDay(DateTime a, String? ymd) {
@@ -56,15 +77,16 @@ class _TodoPageState extends State<TodoPage> {
 
   Future<void> _cycleStatus(Map<String, dynamic> t) async {
     final now = (t['status'] ?? 'todo').toString();
-    final next = now == 'todo'
-        ? 'in_progress'
-        : (now == 'in_progress' ? 'done' : 'todo');
+    final next = now == 'todo' ? 'in_progress' : (now == 'in_progress' ? 'done' : 'todo');
     await PlannerService.setTodoStatus(todoId: t['id'] as String, status: next);
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(next == 'in_progress' ? '진행 중으로 표시했어.' : next == 'done' ? '완료 처리했어.' : '대기 상태로 되돌렸어.')),
+    );
+    setState(() {});
   }
 
-  String _fmt(DateTime d) =>
-      '${d.year}.${d.month.toString().padLeft(2, '0')}.${d.day.toString().padLeft(2, '0')}';
+  String _fmt(DateTime d) => '${d.year}.${d.month.toString().padLeft(2, '0')}.${d.day.toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context) {
@@ -81,9 +103,7 @@ class _TodoPageState extends State<TodoPage> {
           }
           final curriculums = snapshot.data![0];
           final todos = snapshot.data![1];
-          final visibleDays = _viewMode == 'week'
-              ? _weekDays(_selectedDate)
-              : _monthDays(_displayMonth);
+          final visibleDays = _viewMode == 'week' ? _weekDays(_selectedDate) : _monthDays(_displayMonth);
           final selectedTodos = todos.where((t) => _sameDay(_selectedDate, t['due_date'] as String?)).where((t) {
             if (_curriculumId == null) return true;
             return t['curriculum_id'] == _curriculumId;
@@ -98,42 +118,19 @@ class _TodoPageState extends State<TodoPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      '실행 미션 보드',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.deepBlue,
-                      ),
-                    ),
+                    const Text('실행 미션 보드', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.deepBlue)),
                     const SizedBox(height: 8),
-                    const Text(
-                      '투두 캘린더',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.lightText,
-                      ),
-                    ),
+                    const Text('투두 캘린더', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: AppColors.lightText)),
                     const SizedBox(height: 10),
                     const Text(
                       '커리큘럼을 선택하면 캘린더를 중심으로 날짜별 투두를 확인하고 실행 상태를 관리할 수 있어.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        height: 1.6,
-                        color: AppColors.lightMuted,
-                      ),
+                      style: TextStyle(fontSize: 14, height: 1.6, color: AppColors.lightMuted),
                     ),
                     const SizedBox(height: 18),
                     DropdownButtonFormField<String>(
                       initialValue: _curriculumId,
                       items: curriculums
-                          .map<DropdownMenuItem<String>>(
-                            (c) => DropdownMenuItem(
-                              value: c['id'] as String,
-                              child: Text(c['title'] ?? '-'),
-                            ),
-                          )
+                          .map<DropdownMenuItem<String>>((c) => DropdownMenuItem(value: c['id'] as String, child: Text(c['title'] ?? '-')))
                           .toList(),
                       onChanged: (v) => setState(() => _curriculumId = v),
                       decoration: const InputDecoration(labelText: '표시할 커리큘럼 선택'),
@@ -166,13 +163,8 @@ class _TodoPageState extends State<TodoPage> {
                         Expanded(
                           child: Center(
                             child: Text(
-                              _viewMode == 'week'
-                                  ? '${_fmt(visibleDays.first)} ~ ${_fmt(visibleDays.last)}'
-                                  : '${_displayMonth.year}년 ${_displayMonth.month}월',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                              ),
+                              _viewMode == 'week' ? '${_fmt(visibleDays.first)} ~ ${_fmt(visibleDays.last)}' : '${_displayMonth.year}년 ${_displayMonth.month}월',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                             ),
                           ),
                         ),
@@ -218,20 +210,12 @@ class _TodoPageState extends State<TodoPage> {
                                 children: [
                                   Text(
                                     '${d.day}',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w900,
-                                      color: selected ? Colors.white : AppColors.lightText,
-                                    ),
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: selected ? Colors.white : AppColors.lightText),
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
                                     dayTodos.isEmpty ? '투두 없음' : '투두 ${dayTodos.length}개',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700,
-                                      color: selected ? Colors.white70 : AppColors.lightMuted,
-                                    ),
+                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: selected ? Colors.white70 : AppColors.lightMuted),
                                   ),
                                 ],
                               ),
@@ -250,18 +234,9 @@ class _TodoPageState extends State<TodoPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '${_fmt(_selectedDate)} 투두 리스트',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
+                    Text('${_fmt(_selectedDate)} 투두 리스트', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
                     const SizedBox(height: 14),
-                    TextField(
-                      controller: _title,
-                      decoration: const InputDecoration(labelText: '새 투두 제목'),
-                    ),
+                    TextField(controller: _title, decoration: const InputDecoration(labelText: '새 투두 제목')),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       initialValue: _priority,
@@ -277,9 +252,9 @@ class _TodoPageState extends State<TodoPage> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: _create,
+                        onPressed: _saving ? null : _create,
                         icon: const Icon(Icons.add_task_rounded),
-                        label: const Text('선택 날짜에 투두 추가'),
+                        label: Text(_saving ? '추가 중...' : '선택 날짜에 투두 추가'),
                       ),
                     ),
                     const SizedBox(height: 18),
@@ -291,10 +266,7 @@ class _TodoPageState extends State<TodoPage> {
                           color: Colors.white.withValues(alpha: 0.34),
                           borderRadius: BorderRadius.circular(18),
                         ),
-                        child: const Text(
-                          '선택한 날짜에 등록된 투두가 없어.',
-                          style: TextStyle(color: AppColors.lightMuted),
-                        ),
+                        child: const Text('선택한 날짜에 등록된 투두가 없어.', style: TextStyle(color: AppColors.lightMuted)),
                       ),
                     ...selectedTodos.map((t) {
                       final status = (t['status'] ?? 'todo').toString();
@@ -308,14 +280,10 @@ class _TodoPageState extends State<TodoPage> {
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: isProgress
-                                  ? const Color(0xFF0066FF).withValues(alpha: 0.18)
-                                  : Colors.white.withValues(alpha: 0.36),
+                              color: isProgress ? const Color(0xFF0066FF).withValues(alpha: 0.18) : Colors.white.withValues(alpha: 0.36),
                               borderRadius: BorderRadius.circular(18),
                               border: Border.all(
-                                color: isProgress
-                                    ? const Color(0xFF0066FF)
-                                    : Colors.white.withValues(alpha: 0.62),
+                                color: isProgress ? const Color(0xFF0066FF) : Colors.white.withValues(alpha: 0.62),
                                 width: isProgress ? 1.4 : 1,
                               ),
                             ),
@@ -333,11 +301,7 @@ class _TodoPageState extends State<TodoPage> {
                                     borderRadius: BorderRadius.circular(14),
                                   ),
                                   child: Icon(
-                                    isDone
-                                        ? Icons.check_rounded
-                                        : isProgress
-                                            ? Icons.play_arrow_rounded
-                                            : Icons.radio_button_unchecked_rounded,
+                                    isDone ? Icons.check_rounded : isProgress ? Icons.play_arrow_rounded : Icons.radio_button_unchecked_rounded,
                                     color: isProgress ? Colors.white : AppColors.primaryStrong,
                                   ),
                                 ),
@@ -358,10 +322,7 @@ class _TodoPageState extends State<TodoPage> {
                                       const SizedBox(height: 6),
                                       Text(
                                         isDone ? '완료됨' : isProgress ? '진행 중 - 한 번 더 누르면 완료' : '대기 중 - 한 번 누르면 진행 중',
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: AppColors.lightMuted,
-                                        ),
+                                        style: const TextStyle(fontSize: 12, color: AppColors.lightMuted),
                                       ),
                                     ],
                                   ),
