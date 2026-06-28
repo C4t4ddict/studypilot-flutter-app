@@ -99,6 +99,7 @@ class _HomePageState extends State<HomePage> {
     final progress = (_guidelineCount + _curriculumCount + _doneTodoCount) == 0
         ? 0.18
         : (_doneTodoCount / ((_curriculumCount * 3) + 1)).clamp(0.18, 0.92);
+    final needsOnboarding = user != null && _guidelineCount == 0 && _curriculumCount == 0 && _todoTotalCount == 0;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -172,6 +173,34 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
+          if (needsOnboarding) ...[
+            const SizedBox(height: 18),
+            Container(
+              decoration: AppTheme.glassCard(),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('첫 학습 시작 가이드', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 10),
+                  const Text(
+                    '아직 비어 있으니까 순서대로 한 번만 만들면 바로 학습 흐름이 잡혀. 목표를 정하고 첫 계획과 첫 실행 항목까지 이어가자.',
+                    style: TextStyle(fontSize: 13, height: 1.6, color: AppColors.lightMuted),
+                  ),
+                  const SizedBox(height: 14),
+                  Column(
+                    children: [
+                      _OnboardingStepTile(step: '1', title: '가이드라인 만들기', subtitle: '목표 직무와 학습 원칙부터 정리', onTap: () => context.go('/guidelines')),
+                      const SizedBox(height: 10),
+                      _OnboardingStepTile(step: '2', title: '커리큘럼 설계', subtitle: '학습 기간과 계획 구조 잡기', onTap: () => context.go('/curriculums')),
+                      const SizedBox(height: 10),
+                      _OnboardingStepTile(step: '3', title: '첫 투두 등록', subtitle: '오늘 바로 실행할 첫 항목 만들기', onTap: () => context.go('/todos')),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 18),
           Row(
             children: [
@@ -497,6 +526,57 @@ class _KpiCard extends StatelessWidget {
 }
 
 
+
+
+
+class _OnboardingStepTile extends StatelessWidget {
+  final String step;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  const _OnboardingStepTile({required this.step, required this.title, required this.subtitle, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.34),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: const Color(0xFF4F8CFF),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(step, style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.lightText)),
+                  const SizedBox(height: 4),
+                  Text(subtitle, style: const TextStyle(fontSize: 12.5, color: AppColors.lightMuted)),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: AppColors.lightMuted),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _MiniStatCard extends StatelessWidget {
   final String label;
