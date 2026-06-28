@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/app_theme.dart';
 import '../../services/planner_service.dart';
@@ -170,6 +171,31 @@ class _CurriculumPageState extends State<CurriculumPage> {
                         onPressed: _saving ? null : _create,
                         icon: const Icon(Icons.map_rounded),
                         label: Text(_saving ? '생성 중...' : '커리큘럼 생성하기'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              Container(
+                decoration: AppTheme.glassCard(),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('다음 단계로 이어가기', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 10),
+                    const Text(
+                      '커리큘럼이 준비됐으면 이제 날짜별 실행 단위인 투두로 내려가서 실제 학습을 굴릴 수 있어.',
+                      style: TextStyle(fontSize: 13, height: 1.5, color: AppColors.lightMuted),
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => context.go('/todos'),
+                        icon: const Icon(Icons.checklist_rounded),
+                        label: const Text('투두 캘린더로 이동'),
                       ),
                     ),
                   ],
