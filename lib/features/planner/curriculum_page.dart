@@ -72,13 +72,15 @@ class _CurriculumPageState extends State<CurriculumPage> {
         future: Future.wait([
           PlannerService.listGuidelines(),
           PlannerService.listCurriculums(),
+          PlannerService.flowSummary(),
         ]),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
-          final guidelines = snapshot.data![0];
-          final curriculums = snapshot.data![1];
+          final guidelines = snapshot.data![0] as List<Map<String, dynamic>>;
+          final curriculums = snapshot.data![1] as List<Map<String, dynamic>>;
+          final summary = snapshot.data![2] as Map<String, dynamic>;
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(0, 8, 0, 120),
@@ -197,7 +199,7 @@ class _CurriculumPageState extends State<CurriculumPage> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              '연결 가능한 가이드라인 ${guidelines.length}개, 생성된 커리큘럼 ${curriculums.length}개야. 이제 실행 단위 투두로 내려가면 돼.',
+                              '커리큘럼 ${summary['curriculumCount']}개 중 투두가 붙은 건 ${summary['curriculumsWithTodo']}개야. 아직 실행 단위가 없는 커리큘럼부터 투두로 내려주면 좋아.',
                               style: const TextStyle(fontSize: 13, height: 1.5, color: AppColors.lightText),
                             ),
                           ),

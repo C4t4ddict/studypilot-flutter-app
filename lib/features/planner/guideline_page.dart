@@ -62,9 +62,16 @@ class _GuidelinePageState extends State<GuidelinePage> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: FutureBuilder(
-        future: PlannerService.listGuidelines(),
+        future: Future.wait([
+          PlannerService.listGuidelines(),
+          PlannerService.flowSummary(),
+        ]),
         builder: (context, snapshot) {
-          final items = snapshot.data ?? const [];
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final items = snapshot.data![0] as List<Map<String, dynamic>>;
+          final summary = snapshot.data![1] as Map<String, dynamic>;
           return ListView(
             padding: const EdgeInsets.fromLTRB(0, 8, 0, 120),
             children: [
@@ -129,7 +136,7 @@ class _GuidelinePageState extends State<GuidelinePage> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              '지금까지 만든 가이드라인 ${items.length}개. 다음엔 이 방향을 기간형 커리큘럼으로 바꾸면 돼.',
+                              '가이드라인 ${summary['guidelineCount']}개 중 커리큘럼으로 이어진 건 ${summary['guidelinesWithCurriculum']}개야. 아직 연결 안 된 방향부터 커리큘럼으로 내려주면 돼.',
                               style: const TextStyle(fontSize: 13, height: 1.5, color: AppColors.lightText),
                             ),
                           ),
