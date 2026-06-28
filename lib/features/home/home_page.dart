@@ -137,10 +137,18 @@ class _HomePageState extends State<HomePage> {
                           const SizedBox(width: 8),
                           _MiniPill(
                             icon: Icons.schedule_rounded,
-                            label: '최근 로그인 ${_formatLastSignedIn()}',
+                            label: user == null ? '로그인 후 기록 표시' : '최근 로그인 ${_formatLastSignedIn()}',
                           ),
                         ],
-                      )
+                      ),
+                      if (user == null) ...[
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: () => context.go('/login'),
+                          icon: const Icon(Icons.login_rounded),
+                          label: const Text('로그인하고 시작하기'),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -242,7 +250,7 @@ class _HomePageState extends State<HomePage> {
                   icon: Icons.person_outline_rounded,
                   title: '프로필 상태',
                   subtitle: user == null ? '로그인이 필요해.' : (user.email ?? user.id),
-                  onTap: () => context.go('/profile'),
+                  onTap: user == null ? () => context.go('/login') : () => context.go('/profile'),
                 ),
                 const SizedBox(height: 10),
                 _StatusTile(
@@ -405,8 +413,7 @@ class _QuickActionButton extends StatelessWidget {
   final String label;
   final IconData icon;
   final VoidCallback onTap;
-  const _QuickActionButton(
-      {required this.label, required this.icon, required this.onTap});
+  const _QuickActionButton({required this.label, required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -425,13 +432,7 @@ class _QuickActionButton extends StatelessWidget {
           children: [
             Icon(icon, size: 18, color: AppColors.primaryStrong),
             const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                color: AppColors.lightText,
-              ),
-            ),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.lightText)),
           ],
         ),
       ),
@@ -444,12 +445,7 @@ class _StatusTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback? onTap;
-  const _StatusTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    this.onTap,
-  });
+  const _StatusTile({required this.icon, required this.title, required this.subtitle, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -478,22 +474,13 @@ class _StatusTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.lightText)),
+                  Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.lightText)),
                   const SizedBox(height: 4),
-                  Text(subtitle,
-                      style: const TextStyle(
-                          fontSize: 12.5,
-                          height: 1.45,
-                          color: AppColors.lightMuted)),
+                  Text(subtitle, style: const TextStyle(fontSize: 12.5, height: 1.45, color: AppColors.lightMuted)),
                 ],
               ),
             ),
-            if (onTap != null)
-              const Icon(Icons.chevron_right_rounded, color: AppColors.lightMuted),
+            if (onTap != null) const Icon(Icons.chevron_right_rounded, color: AppColors.lightMuted),
           ],
         ),
       ),
