@@ -146,6 +146,25 @@ class _TodoPageState extends State<TodoPage> {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.28),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.48)),
+                      ),
+                      child: const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('투두 캘린더의 역할', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.lightText)),
+                          SizedBox(height: 8),
+                          Text('• 오늘/이번 주에 실제로 해야 할 실행 항목을 관리해', style: TextStyle(fontSize: 13, height: 1.5, color: AppColors.lightMuted)),
+                          Text('• 날짜별 투두 추가와 상태 변경, 우선순위 확인에 더 집중해', style: TextStyle(fontSize: 13, height: 1.5, color: AppColors.lightMuted)),
+                          Text('• 큰 흐름 확인은 학습 캘린더, 실행 체크는 여기서 하는 구조야', style: TextStyle(fontSize: 13, height: 1.5, color: AppColors.lightMuted)),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 18),
                     DropdownButtonFormField<String>(
                       initialValue: _curriculumId,

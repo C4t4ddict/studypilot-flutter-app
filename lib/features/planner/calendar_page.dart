@@ -578,6 +578,26 @@ class _CalendarPanel extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.34),
               borderRadius: BorderRadius.circular(18),
             ),
+            child: const Row(
+              children: [
+                Icon(Icons.route_rounded, color: AppColors.primaryStrong),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '학습 캘린더는 커리큘럼 전체 항로와 진행 흐름을 보는 화면이야. 큰 일정 흐름과 선택 날짜의 학습 밀도를 확인하는 데 집중해.',
+                    style: TextStyle(fontSize: 13, height: 1.5, color: AppColors.lightText),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.34),
+              borderRadius: BorderRadius.circular(18),
+            ),
             child: Row(
               children: [
                 Expanded(
