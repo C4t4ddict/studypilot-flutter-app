@@ -36,6 +36,7 @@ class SearchBookmarkDto {
 class SearchService {
   static SupabaseClient get _client => Supabase.instance.client;
   static const _bookmarkKey = 'search_bookmarks';
+  static const _recentQueryKey = 'search_recent_queries';
 
   /// Supabase 실데이터 검색 예시.
   /// 기본은 public.search_items(title, subtitle) 테이블을 조회한다.
@@ -110,5 +111,19 @@ class SearchService {
       _bookmarkKey,
       next.map((e) => jsonEncode(e.toJson())).toList(),
     );
+  }
+
+  static Future<List<String>> getRecentQueries() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getStringList(_recentQueryKey) ?? const [];
+  }
+
+  static Future<void> saveRecentQuery(String query) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    final current = await getRecentQueries();
+    final next = [trimmed, ...current.where((e) => e != trimmed)].take(10).toList();
+    await prefs.setStringList(_recentQueryKey, next);
   }
 }
