@@ -29,6 +29,7 @@ class _HomePageState extends State<HomePage> {
   int _todoPendingCount = 0;
   int _todayTodoCount = 0;
   int _todayDoneCount = 0;
+  int _todayPendingCount = 0;
   List<Map<String, dynamic>> _weekActivity = const [];
   List<Map<String, dynamic>> _curriculumProgress = const [];
 
@@ -74,6 +75,7 @@ class _HomePageState extends State<HomePage> {
         _todoPendingCount = analytics['todoPending'] ?? 0;
         _todayTodoCount = analytics['todayTotal'] ?? 0;
         _todayDoneCount = analytics['todayDone'] ?? 0;
+        _todayPendingCount = _todayTodoCount - _todayDoneCount;
         _weekActivity = (analytics['weekActivity'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
         _curriculumProgress = (analytics['curriculumProgress'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
       });
@@ -196,6 +198,44 @@ class _HomePageState extends State<HomePage> {
                       const SizedBox(height: 10),
                       _OnboardingStepTile(step: '3', title: '첫 투두 등록', subtitle: '오늘 바로 실행할 첫 항목 만들기', onTap: () => context.go('/todos')),
                     ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (user != null && (_todayPendingCount > 0 || _todoInProgressCount > 0)) ...[
+            const SizedBox(height: 18),
+            Container(
+              decoration: AppTheme.glassCard(),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('오늘의 리마인드', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 10),
+                  Text(
+                    _todayPendingCount > 0
+                        ? '오늘 아직 $_todayPendingCount개 남아 있어. 지금 투두 캘린더로 가서 하나씩 처리해보자.'
+                        : '오늘 마감은 다 끝냈고, 진행 중인 일정 $_todoInProgressCount개를 마무리하면 좋아.',
+                    style: const TextStyle(fontSize: 13, height: 1.6, color: AppColors.lightMuted),
+                  ),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      _MiniStatCard(label: '오늘 미완료', value: '$_todayPendingCount'),
+                      _MiniStatCard(label: '진행중', value: '$_todoInProgressCount'),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => context.go('/todos'),
+                      icon: const Icon(Icons.notifications_active_rounded),
+                      label: const Text('오늘 할 일 점검하러 가기'),
+                    ),
                   ),
                 ],
               ),
