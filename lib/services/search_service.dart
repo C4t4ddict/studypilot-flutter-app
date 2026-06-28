@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SearchItemDto {
@@ -8,8 +11,31 @@ class SearchItemDto {
   SearchItemDto({required this.id, required this.title, this.subtitle});
 }
 
+class SearchBookmarkDto {
+  final String id;
+  final String title;
+  final String? subtitle;
+
+  const SearchBookmarkDto({required this.id, required this.title, this.subtitle});
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'subtitle': subtitle,
+  };
+
+  factory SearchBookmarkDto.fromJson(Map<String, dynamic> json) {
+    return SearchBookmarkDto(
+      id: (json['id'] as String?) ?? '',
+      title: (json['title'] as String?) ?? '-',
+      subtitle: json['subtitle'] as String?,
+    );
+  }
+}
+
 class SearchService {
   static SupabaseClient get _client => Supabase.instance.client;
+  static const _bookmarkKey = 'search_bookmarks';
 
   /// Supabase 실데이터 검색 예시.
   /// 기본은 public.search_items(title, subtitle) 테이블을 조회한다.
@@ -54,5 +80,35 @@ class SearchService {
         .select('id')
         .count(CountOption.exact);
     return res.count;
+  }
+
+  static Future<List<SearchBookmarkDto>> getBookmarks() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getStringList(_bookmarkKey) ?? const [];
+    return raw
+        .map((e) => jsonDecode(e) as Map<String, dynamic>)
+        .map(SearchBookmarkDto.fromJson)
+        .toList();
+  }
+
+  static Future<bool> isBookmarked(String id) async {
+    final bookmarks = await getBookmarks();
+    return bookmarks.any((e) => e.id == id);
+  }
+
+  static Future<void> toggleBookmark(SearchItemDto item) async {
+    final prefs = await SharedPreferences.getInstance();
+    final bookmarks = await getBookmarks();
+    final exists = bookmarks.any((e) => e.id == item.id);
+    final next = exists
+        ? bookmarks.where((e) => e.id != item.id).toList()
+        : [
+            SearchBookmarkDto(id: item.id, title: item.title, subtitle: item.subtitle),
+            ...bookmarks,
+          ].take(20).toList();
+    await prefs.setStringList(
+      _bookmarkKey,
+      next.map((e) => jsonEncode(e.toJson())).toList(),
+    );
   }
 }
