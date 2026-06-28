@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/app_theme.dart';
 import '../../services/planner_service.dart';
@@ -104,10 +105,21 @@ class _TodoPageState extends State<TodoPage> {
           final curriculums = snapshot.data![0];
           final todos = snapshot.data![1];
           final visibleDays = _viewMode == 'week' ? _weekDays(_selectedDate) : _monthDays(_displayMonth);
-          final selectedTodos = todos.where((t) => _sameDay(_selectedDate, t['due_date'] as String?)).where((t) {
+          final selectedCurriculum = _curriculumId == null
+              ? null
+              : (curriculums.where((c) => c['id'] == _curriculumId).isEmpty
+                  ? null
+                  : curriculums.firstWhere((c) => c['id'] == _curriculumId));
+          final curriculumTodos = todos.where((t) {
             if (_curriculumId == null) return true;
             return t['curriculum_id'] == _curriculumId;
           }).toList();
+          final selectedTodos = curriculumTodos.where((t) => _sameDay(_selectedDate, t['due_date'] as String?)).toList();
+          final totalCount = curriculumTodos.length;
+          final doneCount = curriculumTodos.where((t) => (t['status'] ?? 'todo') == 'done').length;
+          final progressCount = curriculumTodos.where((t) => (t['status'] ?? 'todo') == 'in_progress').length;
+          final todoCount = curriculumTodos.where((t) => (t['status'] ?? 'todo') == 'todo').length;
+          final weekTodos = curriculumTodos.where((t) => visibleDays.any((d) => _sameDay(d, t['due_date'] as String?))).toList();
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(0, 8, 0, 120),
@@ -173,6 +185,51 @@ class _TodoPageState extends State<TodoPage> {
                           .toList(),
                       onChanged: (v) => setState(() => _curriculumId = v),
                       decoration: const InputDecoration(labelText: '표시할 커리큘럼 선택'),
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.32),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            selectedCurriculum == null ? '전체 커리큘럼 실행 요약' : '선택 커리큘럼 실행 요약',
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.lightText),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            selectedCurriculum == null
+                                ? '커리큘럼을 고르면 해당 학습 항로의 실행 현황을 더 또렷하게 볼 수 있어.'
+                                : '${selectedCurriculum['title'] ?? '-'} 기준으로 실행 현황을 보고 있어.',
+                            style: const TextStyle(fontSize: 13, height: 1.5, color: AppColors.lightMuted),
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _SummaryChip(label: '전체', value: '$totalCount개'),
+                              _SummaryChip(label: '완료', value: '$doneCount개'),
+                              _SummaryChip(label: '진행중', value: '$progressCount개'),
+                              _SummaryChip(label: '대기', value: '$todoCount개'),
+                              _SummaryChip(label: _viewMode == 'week' ? '이번 주' : '이번 달', value: '${weekTodos.length}개'),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () => context.go('/calendar'),
+                              icon: const Icon(Icons.route_rounded),
+                              label: const Text('학습 캘린더로 큰 흐름 보기'),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 14),
                     Row(
@@ -378,6 +435,31 @@ class _TodoPageState extends State<TodoPage> {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _SummaryChip extends StatelessWidget {
+  final String label;
+  final String value;
+  const _SummaryChip({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.lightMuted)),
+          const SizedBox(height: 4),
+          Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.lightText)),
+        ],
       ),
     );
   }
