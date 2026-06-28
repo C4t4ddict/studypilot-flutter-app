@@ -541,6 +541,13 @@ class _CalendarPanel extends StatelessWidget {
     final selectedSummaryTodos = todos.where((t) => isSameDay(selected, t['due_date'] as String?)).where(todoPass).toList();
     final completed = selectedSummaryTodos.where((t) => (t['status'] ?? 'todo') == 'done').length;
     final progress = selectedSummaryTodos.isEmpty ? 0.0 : completed / selectedSummaryTodos.length;
+    final roadmapTodos = selectedCurriculum == null
+        ? todos.where(todoPass).toList()
+        : todos.where((t) => t['curriculum_id'] == selectedCurriculum!['id']).where(todoPass).toList();
+    final roadmapDone = roadmapTodos.where((t) => (t['status'] ?? 'todo') == 'done').length;
+    final roadmapProgress = roadmapTodos.where((t) => (t['status'] ?? 'todo') == 'in_progress').length;
+    final roadmapTodo = roadmapTodos.where((t) => (t['status'] ?? 'todo') == 'todo').length;
+    final roadmapRate = roadmapTodos.isEmpty ? 0.0 : roadmapDone / roadmapTodos.length;
 
     return Container(
       margin: const EdgeInsets.all(12),
@@ -614,6 +621,43 @@ class _CalendarPanel extends StatelessWidget {
                   width: 110,
                   child: LinearProgressIndicator(value: progress, minHeight: 8, borderRadius: BorderRadius.circular(999)),
                 ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.34),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  selectedCurriculum == null ? '전체 학습 로드맵 요약' : '선택 커리큘럼 로드맵 요약',
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  selectedCurriculum == null
+                      ? '전체 학습 항로 기준으로 현재 진행률과 남은 실행량을 보고 있어.'
+                      : '${selectedCurriculum!['title'] ?? '-'}의 기간/실행 진행률을 보고 있어.',
+                  style: const TextStyle(fontSize: 12, color: AppColors.lightMuted),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _RoadmapChip(label: '전체', value: '${roadmapTodos.length}개'),
+                    _RoadmapChip(label: '완료', value: '$roadmapDone개'),
+                    _RoadmapChip(label: '진행중', value: '$roadmapProgress개'),
+                    _RoadmapChip(label: '대기', value: '$roadmapTodo개'),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                LinearProgressIndicator(value: roadmapRate, minHeight: 8, borderRadius: BorderRadius.circular(999)),
               ],
             ),
           ),
@@ -857,6 +901,32 @@ class _TodoPanel extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+
+class _RoadmapChip extends StatelessWidget {
+  final String label;
+  final String value;
+  const _RoadmapChip({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.lightMuted)),
+          const SizedBox(height: 4),
+          Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.lightText)),
+        ],
       ),
     );
   }
