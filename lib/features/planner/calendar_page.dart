@@ -29,11 +29,10 @@ class PlannerCalendarPage extends StatefulWidget {
 
 class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
   DateTime _selected = DateTime.now();
-  DateTime _displayMonth =
-      DateTime(DateTime.now().year, DateTime.now().month, 1);
+  DateTime _displayMonth = DateTime(DateTime.now().year, DateTime.now().month, 1);
 
-  String _viewMode = 'month'; // month | week
-  String _todoFilter = 'all'; // all | todo | in_progress | done
+  String _viewMode = 'month';
+  String _todoFilter = 'all';
   bool _sidebarExpanded = false;
 
   final _newTodoCtrl = TextEditingController();
@@ -71,8 +70,7 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
   void _syncUrl() => context.replace(_sharePath());
 
   Future<void> _copyShareLink() async {
-    final absolute =
-        kIsWeb ? '${Uri.base.origin}${_sharePath()}' : _sharePath();
+    final absolute = kIsWeb ? '${Uri.base.origin}${_sharePath()}' : _sharePath();
     await Clipboard.setData(ClipboardData(text: absolute));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -81,14 +79,12 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
   }
 
   Future<void> _shareCurrentState() async {
-    final absolute =
-        kIsWeb ? '${Uri.base.origin}${_sharePath()}' : _sharePath();
+    final absolute = kIsWeb ? '${Uri.base.origin}${_sharePath()}' : _sharePath();
     await Share.share('스터디 파일럿 학습 캘린더 공유\n$absolute');
   }
 
   Future<void> _showShareQr() async {
-    final absolute =
-        kIsWeb ? '${Uri.base.origin}${_sharePath()}' : _sharePath();
+    final absolute = kIsWeb ? '${Uri.base.origin}${_sharePath()}' : _sharePath();
     await showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -127,14 +123,12 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
     final first = DateTime(month.year, month.month, 1);
     final next = DateTime(month.year, month.month + 1, 1);
     final total = next.difference(first).inDays;
-    return List.generate(
-        total, (i) => DateTime(month.year, month.month, i + 1));
+    return List.generate(total, (i) => DateTime(month.year, month.month, i + 1));
   }
 
   List<DateTime> _weekDays(DateTime day) {
     final monday = DateTime(day.year, day.month, day.day - (day.weekday - 1));
-    return List.generate(
-        7, (i) => DateTime(monday.year, monday.month, monday.day + i));
+    return List.generate(7, (i) => DateTime(monday.year, monday.month, monday.day + i));
   }
 
   bool _todoPass(Map<String, dynamic> t) {
@@ -164,8 +158,7 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
       initialDate: _selected,
     );
     if (picked == null) return;
-    await PlannerService.moveTodosDueDate(
-        todoIds: _selectedTodoIds.toList(), dueDate: picked);
+    await PlannerService.moveTodosDueDate(todoIds: _selectedTodoIds.toList(), dueDate: picked);
     if (mounted) {
       setState(() => _selectedTodoIds.clear());
     }
@@ -174,8 +167,7 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
   Future<void> _changePriority(Map<String, dynamic> t) async {
     final cur = (t['priority'] ?? 'medium').toString();
     final next = cur == 'low' ? 'medium' : (cur == 'medium' ? 'high' : 'low');
-    await PlannerService.updateTodoPriority(
-        todoId: t['id'] as String, priority: next);
+    await PlannerService.updateTodoPriority(todoId: t['id'] as String, priority: next);
     if (mounted) setState(() {});
   }
 
@@ -190,22 +182,15 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('투두 수정'),
-        content: TextField(
-            controller: ctrl,
-            decoration: const InputDecoration(labelText: '제목')),
+        content: TextField(controller: ctrl, decoration: const InputDecoration(labelText: '제목')),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('취소')),
-          TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('저장')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('취소')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('저장')),
         ],
       ),
     );
     if (ok == true) {
-      await PlannerService.updateTodoTitle(
-          todoId: t['id'] as String, title: ctrl.text);
+      await PlannerService.updateTodoTitle(todoId: t['id'] as String, title: ctrl.text);
       if (mounted) setState(() {});
     }
   }
@@ -222,12 +207,9 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
     if (mounted) setState(() {});
   }
 
-  // 클릭 1회: 진행중(in_progress, 하이라이트), 2회: 완료(done, 취소선), 3회: todo
   Future<void> _cycleTodoStatus(Map<String, dynamic> t) async {
     final now = (t['status'] ?? 'todo').toString();
-    final next = now == 'todo'
-        ? 'in_progress'
-        : (now == 'in_progress' ? 'done' : 'todo');
+    final next = now == 'todo' ? 'in_progress' : (now == 'in_progress' ? 'done' : 'todo');
     await PlannerService.setTodoStatus(todoId: t['id'] as String, status: next);
     if (mounted) setState(() {});
   }
@@ -235,8 +217,7 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
   @override
   Widget build(BuildContext context) {
     final body = FutureBuilder(
-      future: Future.wait(
-          [PlannerService.listCurriculums(), PlannerService.listTodos()]),
+      future: Future.wait([PlannerService.listCurriculums(), PlannerService.listTodos()]),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -245,17 +226,15 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
         final curriculums = snapshot.data![0];
         final todos = snapshot.data![1];
 
-        final visibleDays = _viewMode == 'week'
-            ? _weekDays(_selected)
-            : _monthDays(_displayMonth);
-        final selectedTodos = todos
-            .where((t) => _isSameDay(_selected, t['due_date'] as String?))
-            .where(_todoPass)
-            .toList();
+        final visibleDays = _viewMode == 'week' ? _weekDays(_selected) : _monthDays(_displayMonth);
+        final selectedTodos = todos.where((t) => _isSameDay(_selected, t['due_date'] as String?)).where(_todoPass).toList();
 
         final isWide = MediaQuery.of(context).size.width >= 1100;
-
         final currentPath = GoRouterState.of(context).matchedLocation;
+
+        final selectedCurriculum = _curriculumId == null
+            ? null
+            : curriculums.cast<Map<String, dynamic>>().where((c) => c['id'] == _curriculumId).cast<Map<String, dynamic>?>().firstOrNull;
 
         final menuPanel = _MenuPanel(
           expanded: _sidebarExpanded,
@@ -290,21 +269,23 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
           },
           onPrevMonth: () {
             setState(() {
-              _displayMonth =
-                  DateTime(_displayMonth.year, _displayMonth.month - 1, 1);
+              _displayMonth = DateTime(_displayMonth.year, _displayMonth.month - 1, 1);
               _selected = DateTime(_displayMonth.year, _displayMonth.month, 1);
             });
             _syncUrl();
           },
           onNextMonth: () {
             setState(() {
-              _displayMonth =
-                  DateTime(_displayMonth.year, _displayMonth.month + 1, 1);
+              _displayMonth = DateTime(_displayMonth.year, _displayMonth.month + 1, 1);
               _selected = DateTime(_displayMonth.year, _displayMonth.month, 1);
             });
             _syncUrl();
           },
           todoPass: _todoPass,
+          selectedCurriculum: selectedCurriculum,
+          onCopyShare: _copyShareLink,
+          onShare: _shareCurrentState,
+          onQr: _showShareQr,
         );
 
         final todoPanel = _TodoPanel(
@@ -339,11 +320,7 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
           if (!isWide) {
             return ListView(
               padding: const EdgeInsets.all(12),
-              children: [
-                calendarPanel,
-                const SizedBox(height: 12),
-                todoPanel,
-              ],
+              children: [calendarPanel, const SizedBox(height: 12), todoPanel],
             );
           }
           return Row(
@@ -358,13 +335,7 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
         if (!isWide) {
           return ListView(
             padding: const EdgeInsets.all(12),
-            children: [
-              menuPanel,
-              const SizedBox(height: 12),
-              calendarPanel,
-              const SizedBox(height: 12),
-              todoPanel
-            ],
+            children: [menuPanel, const SizedBox(height: 12), calendarPanel, const SizedBox(height: 12), todoPanel],
           );
         }
 
@@ -377,9 +348,13 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
               child: menuPanel,
             ),
             const VerticalDivider(width: 1),
-            Expanded(flex: 2, child: calendarPanel),
+            Expanded(
+              child: calendarPanel,
+            ),
             const VerticalDivider(width: 1),
-            Expanded(flex: 2, child: todoPanel),
+            Expanded(
+              child: todoPanel,
+            ),
           ],
         );
       },
@@ -389,34 +364,20 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
 
     return Scaffold(
       appBar: AppBar(
+        title: const Text('학습 캘린더'),
         leading: IconButton(
-          tooltip: _sidebarExpanded ? '사이드바 접기' : '사이드바 펼치기',
           icon: Icon(_sidebarExpanded ? Icons.menu_open : Icons.menu),
           onPressed: () => setState(() => _sidebarExpanded = !_sidebarExpanded),
         ),
-        title: const Text('학습 캘린더'),
         actions: [
           IconButton(
             tooltip: '라이트/다크 전환',
             onPressed: toggleThemeMode,
-            icon: Icon(
-              themeModeNotifier.value == ThemeMode.dark
-                  ? Icons.light_mode_rounded
-                  : Icons.dark_mode_rounded,
-            ),
+            icon: Icon(themeModeNotifier.value == ThemeMode.dark ? Icons.light_mode : Icons.dark_mode),
           ),
-          IconButton(
-              onPressed: _copyShareLink,
-              tooltip: '링크 복사',
-              icon: const Icon(Icons.link)),
-          IconButton(
-              onPressed: _showShareQr,
-              tooltip: 'QR',
-              icon: const Icon(Icons.qr_code)),
-          IconButton(
-              onPressed: _shareCurrentState,
-              tooltip: '공유',
-              icon: const Icon(Icons.share)),
+          IconButton(tooltip: '링크 복사', onPressed: _copyShareLink, icon: const Icon(Icons.link)),
+          IconButton(tooltip: 'QR 공유', onPressed: _showShareQr, icon: const Icon(Icons.qr_code)),
+          IconButton(tooltip: '공유', onPressed: _shareCurrentState, icon: const Icon(Icons.share)),
         ],
       ),
       body: body,
@@ -427,7 +388,7 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
 class _MenuPanel extends StatelessWidget {
   final bool expanded;
   final String currentPath;
-  final void Function(String path) onGo;
+  final void Function(String) onGo;
   final String viewMode;
   final String todoFilter;
   final void Function(String) onViewChanged;
@@ -443,57 +404,35 @@ class _MenuPanel extends StatelessWidget {
     required this.onFilterChanged,
   });
 
-  Widget _navIcon({
-    required BuildContext context,
-    required IconData icon,
-    required String tooltip,
-    required String path,
-  }) {
-    final active = currentPath == path;
+  Widget _navIcon({required BuildContext context, required IconData icon, required String tooltip, required String path}) {
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final fg = dark ? Colors.white : const Color(0xFF3E2D7A);
-
+    final active = currentPath == path;
     return Tooltip(
       message: tooltip,
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
         onTap: () => onGo(path),
+        borderRadius: BorderRadius.circular(14),
         child: Container(
-          width: expanded ? double.infinity : 46,
-          height: 46,
-          padding: EdgeInsets.symmetric(horizontal: expanded ? 12 : 0),
+          width: expanded ? double.infinity : 44,
+          height: 44,
+          alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: active
-                ? (dark
-                    ? Colors.white.withValues(alpha: 0.12)
-                    : const Color(0xFFDCD8F8))
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
+            color: active ? (dark ? Colors.white12 : const Color(0xFFDCE9FF)) : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: active
-                  ? (dark
-                      ? Colors.white.withValues(alpha: 0.35)
-                      : const Color(0xFFB8ADF3))
-                  : (dark
-                      ? Colors.white.withValues(alpha: 0.08)
-                      : const Color(0xFFD7D9E8)),
+              color: active ? const Color(0xFF7BA9FF) : (dark ? Colors.white12 : const Color(0xFFE2E7F4)),
             ),
           ),
-          child: Row(
-            mainAxisAlignment:
-                expanded ? MainAxisAlignment.start : MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: fg, size: 20),
-              if (expanded) ...[
-                const SizedBox(width: 10),
-                Text(
-                  tooltip,
-                  style: TextStyle(
-                      color: fg, fontSize: 13, fontWeight: FontWeight.w600),
-                ),
-              ]
-            ],
-          ),
+          child: expanded
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(icon, color: dark ? Colors.white : AppColors.deepBlue, size: 20),
+                    const SizedBox(width: 8),
+                    Text(tooltip, style: TextStyle(color: dark ? Colors.white : AppColors.deepBlue, fontWeight: FontWeight.w700)),
+                  ],
+                )
+              : Icon(icon, color: dark ? Colors.white : AppColors.deepBlue, size: 20),
         ),
       ),
     );
@@ -502,63 +441,30 @@ class _MenuPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final sidebarBg = dark ? const Color(0xFF0A0B0F) : const Color(0xFFEEF0FA);
-
     return Container(
-      color: sidebarBg,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: dark ? const Color(0xFF101625) : const Color(0xFFF2F6FF),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      padding: const EdgeInsets.all(12),
       child: Column(
         children: [
-          const SizedBox(height: 4),
-          _navIcon(
-              context: context,
-              icon: Icons.home_rounded,
-              tooltip: '홈',
-              path: '/'),
+          _navIcon(context: context, icon: Icons.home_rounded, tooltip: '홈', path: '/'),
           const SizedBox(height: 10),
-          _navIcon(
-              context: context,
-              icon: Icons.rule_rounded,
-              tooltip: '가이드라인',
-              path: '/guidelines'),
+          _navIcon(context: context, icon: Icons.rule_rounded, tooltip: '가이드라인', path: '/guidelines'),
           const SizedBox(height: 10),
-          _navIcon(
-              context: context,
-              icon: Icons.event_note_rounded,
-              tooltip: '커리큘럼',
-              path: '/curriculums'),
+          _navIcon(context: context, icon: Icons.event_note_rounded, tooltip: '커리큘럼', path: '/curriculums'),
           const SizedBox(height: 10),
-          _navIcon(
-              context: context,
-              icon: Icons.calendar_month_rounded,
-              tooltip: '캘린더',
-              path: '/calendar'),
+          _navIcon(context: context, icon: Icons.calendar_month_rounded, tooltip: '캘린더', path: '/calendar'),
           const SizedBox(height: 10),
-          _navIcon(
-              context: context,
-              icon: Icons.checklist_rounded,
-              tooltip: '투두',
-              path: '/todos'),
+          _navIcon(context: context, icon: Icons.checklist_rounded, tooltip: '투두', path: '/todos'),
           const SizedBox(height: 10),
-          _navIcon(
-              context: context,
-              icon: Icons.search_rounded,
-              tooltip: '검색',
-              path: '/search'),
+          _navIcon(context: context, icon: Icons.search_rounded, tooltip: '검색', path: '/search'),
           const SizedBox(height: 14),
-          Divider(
-            color: dark ? const Color(0x33FFFFFF) : const Color(0x22000000),
-            height: 1,
-          ),
+          Divider(color: dark ? const Color(0x33FFFFFF) : const Color(0x22000000), height: 1),
           if (expanded) ...[
             const SizedBox(height: 12),
-            Icon(
-              viewMode == 'week'
-                  ? Icons.view_week_rounded
-                  : Icons.calendar_view_month_rounded,
-              color: dark ? Colors.white70 : const Color(0xFF5A4CA1),
-              size: 18,
-            ),
+            Icon(viewMode == 'week' ? Icons.view_week_rounded : Icons.calendar_view_month_rounded, color: dark ? Colors.white70 : const Color(0xFF5A4CA1), size: 18),
             const SizedBox(height: 8),
             SegmentedButton<String>(
               style: const ButtonStyle(visualDensity: VisualDensity.compact),
@@ -573,8 +479,7 @@ class _MenuPanel extends StatelessWidget {
             DropdownButton<String>(
               value: todoFilter,
               dropdownColor: dark ? const Color(0xFF171A22) : Colors.white,
-              style: TextStyle(
-                  color: dark ? Colors.white : const Color(0xFF3E2D7A)),
+              style: TextStyle(color: dark ? Colors.white : const Color(0xFF3E2D7A)),
               underline: const SizedBox.shrink(),
               iconEnabledColor: dark ? Colors.white70 : const Color(0xFF5A4CA1),
               items: const [
@@ -589,11 +494,7 @@ class _MenuPanel extends StatelessWidget {
             ),
           ],
           const Spacer(),
-          _navIcon(
-              context: context,
-              icon: Icons.person_outline_rounded,
-              tooltip: '마이페이지',
-              path: '/profile'),
+          _navIcon(context: context, icon: Icons.person_outline_rounded, tooltip: '마이페이지', path: '/profile'),
         ],
       ),
     );
@@ -606,12 +507,16 @@ class _CalendarPanel extends StatelessWidget {
   final List<DateTime> visibleDays;
   final List<Map<String, dynamic>> curriculums;
   final List<Map<String, dynamic>> todos;
+  final Map<String, dynamic>? selectedCurriculum;
   final bool Function(DateTime, String?, String?) isInRange;
   final bool Function(DateTime, String?) isSameDay;
   final bool Function(Map<String, dynamic>) todoPass;
   final void Function(DateTime) onSelectDay;
   final VoidCallback onPrevMonth;
   final VoidCallback onNextMonth;
+  final Future<void> Function() onCopyShare;
+  final Future<void> Function() onShare;
+  final Future<void> Function() onQr;
 
   const _CalendarPanel({
     required this.selected,
@@ -625,10 +530,18 @@ class _CalendarPanel extends StatelessWidget {
     required this.onPrevMonth,
     required this.onNextMonth,
     required this.todoPass,
+    required this.selectedCurriculum,
+    required this.onCopyShare,
+    required this.onShare,
+    required this.onQr,
   });
 
   @override
   Widget build(BuildContext context) {
+    final selectedSummaryTodos = todos.where((t) => isSameDay(selected, t['due_date'] as String?)).where(todoPass).toList();
+    final completed = selectedSummaryTodos.where((t) => (t['status'] ?? 'todo') == 'done').length;
+    final progress = selectedSummaryTodos.isEmpty ? 0.0 : completed / selectedSummaryTodos.length;
+
     return Container(
       margin: const EdgeInsets.all(12),
       decoration: AppTheme.glassCard(),
@@ -636,15 +549,58 @@ class _CalendarPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '학습 캘린더',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('학습 캘린더', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 6),
+                    Text(
+                      selectedCurriculum == null
+                          ? '커리큘럼을 선택하면 학습 항로가 더 또렷하게 보여.'
+                          : '선택 커리큘럼: ${selectedCurriculum!['title'] ?? '-'}',
+                      style: const TextStyle(fontSize: 13, color: AppColors.lightMuted),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(onPressed: onCopyShare, icon: const Icon(Icons.link_rounded)),
+              IconButton(onPressed: onQr, icon: const Icon(Icons.qr_code_rounded)),
+              IconButton(onPressed: onShare, icon: const Icon(Icons.share_rounded)),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.34),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${selected.year}.${selected.month.toString().padLeft(2, '0')}.${selected.day.toString().padLeft(2, '0')}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 4),
+                      Text('선택 날짜 일정 ${selectedSummaryTodos.length}개 · 완료 $completed개', style: const TextStyle(fontSize: 12, color: AppColors.lightMuted)),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  width: 110,
+                  child: LinearProgressIndicator(value: progress, minHeight: 8, borderRadius: BorderRadius.circular(999)),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              IconButton(
-                  onPressed: onPrevMonth, icon: const Icon(Icons.chevron_left_rounded)),
+              IconButton(onPressed: onPrevMonth, icon: const Icon(Icons.chevron_left_rounded)),
               Expanded(
                 child: Text(
                   '${displayMonth.year}년 ${displayMonth.month}월',
@@ -652,9 +608,7 @@ class _CalendarPanel extends StatelessWidget {
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                 ),
               ),
-              IconButton(
-                  onPressed: onNextMonth,
-                  icon: const Icon(Icons.chevron_right_rounded)),
+              IconButton(onPressed: onNextMonth, icon: const Icon(Icons.chevron_right_rounded)),
             ],
           ),
           const SizedBox(height: 12),
@@ -664,80 +618,59 @@ class _CalendarPanel extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 8,
                 children: visibleDays.map((d) {
-                  final cCount = curriculums
-                      .where((c) => isInRange(d, c['start_date'] as String?,
-                          c['end_date'] as String?))
-                      .length;
-                  final dayTodos = todos
-                      .where((t) => isSameDay(d, t['due_date'] as String?))
-                      .where(todoPass)
-                      .toList();
+                  final cCount = curriculums.where((c) => isInRange(d, c['start_date'] as String?, c['end_date'] as String?)).length;
+                  final dayTodos = todos.where((t) => isSameDay(d, t['due_date'] as String?)).where(todoPass).toList();
                   final tCount = dayTodos.length;
-                  final doneCount = dayTodos
-                      .where((t) => (t['status'] ?? 'todo') == 'done')
-                      .length;
+                  final doneCount = dayTodos.where((t) => (t['status'] ?? 'todo') == 'done').length;
                   final doneRatio = tCount == 0 ? 0.0 : (doneCount / tCount);
                   final has = cCount + tCount > 0;
+                  final selectedDay = selected.year == d.year && selected.month == d.month && selected.day == d.day;
 
                   return Tooltip(
-                    message:
-                        '${d.toIso8601String().substring(0, 10)}\n커리큘럼 $cCount / Todo $tCount',
+                    message: '${d.toIso8601String().substring(0, 10)}\n커리큘럼 $cCount / 투두 $tCount',
                     child: InkWell(
                       onTap: () => onSelectDay(d),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(16),
                       child: Container(
-                        width: 54,
-                        height: 58,
+                        width: 58,
+                        height: 64,
                         decoration: BoxDecoration(
-                          color: selected.year == d.year &&
-                                  selected.month == d.month &&
-                                  selected.day == d.day
-                              ? const Color(0xFF0066FF)
-                              : Colors.white.withValues(alpha: 0.42),
+                          color: selectedDay ? const Color(0xFF0066FF) : Colors.white.withValues(alpha: 0.42),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: has
-                                ? const Color(0xFF0066FF).withValues(alpha: 0.7)
-                                : Colors.white.withValues(alpha: 0.55),
+                            color: has ? const Color(0xFF0066FF).withValues(alpha: 0.7) : Colors.white.withValues(alpha: 0.55),
                           ),
                         ),
                         child: Stack(
                           children: [
                             Center(
-                                child: Text('${d.day}',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w800,
-                                      color: selected.year == d.year && selected.month == d.month && selected.day == d.day
-                                          ? Colors.white
-                                          : AppColors.lightText,
-                                    ))),
+                              child: Text(
+                                '${d.day}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: selectedDay ? Colors.white : AppColors.lightText,
+                                ),
+                              ),
+                            ),
                             if (has)
                               Positioned(
-                                right: 2,
-                                top: 2,
+                                right: 4,
+                                top: 4,
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 4, vertical: 1),
-                                  decoration: BoxDecoration(
-                                      color: Colors.black87,
-                                      borderRadius: BorderRadius.circular(8)),
-                                  child: Text('${cCount + tCount}',
-                                      style: const TextStyle(
-                                          color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                  decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(8)),
+                                  child: Text('${cCount + tCount}', style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700)),
                                 ),
                               ),
                             if (tCount > 0)
                               Positioned(
-                                left: 4,
-                                right: 4,
-                                bottom: 4,
+                                left: 6,
+                                right: 6,
+                                bottom: 6,
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
-                                  child: LinearProgressIndicator(
-                                    value: doneRatio,
-                                    minHeight: 3,
-                                  ),
+                                  child: LinearProgressIndicator(value: doneRatio, minHeight: 4),
                                 ),
                               ),
                           ],
@@ -798,128 +731,112 @@ class _TodoPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('선택 날짜 투두 · ${selected.toIso8601String().substring(0, 10)}',
-              style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 10),
-          DropdownButtonFormField<String>(
-            initialValue: curriculumId,
-            items: curriculums
-                .map((c) => DropdownMenuItem<String>(
-                      value: c['id'] as String,
-                      child: Text(c['title'] ?? '-'),
-                    ))
-                .toList(),
-            onChanged: onCurriculumChanged,
-            decoration: const InputDecoration(labelText: '연결 커리큘럼'),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: todoController,
-                  decoration: const InputDecoration(hintText: '할일 입력 후 +'),
+      child: Container(
+        decoration: AppTheme.glassCard(),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('선택 날짜 투두 · ${selected.toIso8601String().substring(0, 10)}', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              initialValue: curriculumId,
+              items: curriculums
+                  .map<DropdownMenuItem<String>>((c) => DropdownMenuItem(value: c['id'] as String, child: Text(c['title'] ?? '-')))
+                  .toList(),
+              onChanged: onCurriculumChanged,
+              decoration: const InputDecoration(labelText: '연결 커리큘럼'),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: todoController,
+                    decoration: const InputDecoration(labelText: '새 투두'),
+                  ),
                 ),
-              ),
-              IconButton(
-                  onPressed: onAddTodo, icon: const Icon(Icons.add_circle)),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              const Text('우선순위:'),
-              const SizedBox(width: 8),
-              DropdownButton<String>(
-                value: newTodoPriority,
-                items: const [
-                  DropdownMenuItem(value: 'low', child: Text('low')),
-                  DropdownMenuItem(value: 'medium', child: Text('medium')),
-                  DropdownMenuItem(value: 'high', child: Text('high')),
-                ],
-                onChanged: (v) {
-                  if (v != null) onPriorityChanged(v);
-                },
-              ),
-              const Spacer(),
-              Text('선택 ${selectedTodoIds.length}개'),
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
-                onPressed: selectedTodoIds.isEmpty ? null : onBulkMove,
-                icon: const Icon(Icons.drive_file_move_outline),
-                label: const Text('선택 이동'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Expanded(
-            child: selectedTodos.isEmpty
-                ? const Center(child: Text('선택한 날짜에 등록된 투두가 없어.'))
-                : ListView.builder(
-                    itemCount: selectedTodos.length,
-                    itemBuilder: (_, i) {
-                      final t = selectedTodos[i];
-                      final status = (t['status'] ?? 'todo').toString();
-                      final isProgress = status == 'in_progress';
-                      final isDone = status == 'done';
-
-                      final id = t['id'] as String;
-                      final priority = (t['priority'] ?? 'medium').toString();
-                      return Card(
-                        color: isProgress
-                            ? Colors.amber.withValues(alpha: 0.20)
-                            : null,
-                        child: ListTile(
-                          onTap: () => onCycleStatus(t),
-                          leading: Checkbox(
-                            value: selectedTodoIds.contains(id),
-                            onChanged: (_) => onToggleSelect(id),
-                          ),
-                          title: Text(
-                            t['title'] ?? '-',
-                            style: TextStyle(
-                              fontWeight: isProgress
-                                  ? FontWeight.w700
-                                  : FontWeight.w400,
-                              decoration: isDone
-                                  ? TextDecoration.lineThrough
-                                  : TextDecoration.none,
-                            ),
-                          ),
-                          subtitle: Text(
-                            '상태: $status | 우선순위: $priority | 마감: ${t['due_date'] ?? '-'}',
-                          ),
-                          trailing: Wrap(
-                            spacing: 0,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.flag),
-                                tooltip: '우선순위 순환',
-                                onPressed: () => onCyclePriority(t),
-                              ),
-                              IconButton(
-                                  icon: const Icon(Icons.edit),
-                                  onPressed: () => onEdit(t)),
-                              IconButton(
-                                  icon: const Icon(Icons.event),
-                                  onPressed: () =>
-                                      onChangeDueDate(t['id'] as String)),
-                              IconButton(
-                                  icon: const Icon(Icons.delete),
-                                  onPressed: () => onDelete(t['id'] as String)),
-                            ],
-                          ),
-                        ),
-                      );
+                const SizedBox(width: 8),
+                ElevatedButton.icon(onPressed: onAddTodo, icon: const Icon(Icons.add_circle), label: const Text('추가')),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    initialValue: newTodoPriority,
+                    items: const [
+                      DropdownMenuItem(value: 'low', child: Text('낮음')),
+                      DropdownMenuItem(value: 'medium', child: Text('보통')),
+                      DropdownMenuItem(value: 'high', child: Text('높음')),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) onPriorityChanged(v);
                     },
                   ),
-          ),
-          const SizedBox(height: 4),
-          const Text('Tip: 할일 카드를 한 번 누르면 진행중(하이라이트), 한 번 더 누르면 완료(취소선)됩니다.'),
-        ],
+                ),
+                const SizedBox(width: 8),
+                Text('선택 ${selectedTodoIds.length}개'),
+                const SizedBox(width: 8),
+                OutlinedButton(onPressed: selectedTodoIds.isEmpty ? null : onBulkMove, child: const Text('선택 이동')),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: selectedTodos.isEmpty
+                  ? const Center(child: Text('선택한 날짜에 등록된 투두가 없어.'))
+                  : ListView.builder(
+                      itemCount: selectedTodos.length,
+                      itemBuilder: (_, i) {
+                        final t = selectedTodos[i];
+                        final id = t['id'] as String;
+                        final status = (t['status'] ?? 'todo').toString();
+                        final pr = (t['priority'] ?? 'medium').toString();
+                        final done = status == 'done';
+                        final inProgress = status == 'in_progress';
+                        return Opacity(
+                          opacity: done ? 0.52 : 1,
+                          child: Card(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                            color: inProgress ? const Color(0xFFDCE9FF) : Colors.white.withValues(alpha: 0.45),
+                            child: CheckboxListTile(
+                              value: selectedTodoIds.contains(id),
+                              onChanged: (_) => onToggleSelect(id),
+                              title: Text(
+                                t['title'] ?? '-',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  decoration: done ? TextDecoration.lineThrough : null,
+                                ),
+                              ),
+                              subtitle: Text('상태: $status · 우선순위: $pr · 마감: ${t['due_date'] ?? '-'}'),
+                              secondary: InkWell(
+                                onTap: () => onCycleStatus(t),
+                                borderRadius: BorderRadius.circular(18),
+                                child: Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(14),
+                                    color: inProgress ? const Color(0xFF0066FF) : Colors.white.withValues(alpha: 0.4),
+                                  ),
+                                  child: Icon(
+                                    done ? Icons.check_rounded : inProgress ? Icons.play_arrow_rounded : Icons.radio_button_unchecked_rounded,
+                                    color: inProgress ? Colors.white : AppColors.primaryStrong,
+                                  ),
+                                ),
+                              ),
+                              controlAffinity: ListTileControlAffinity.leading,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
