@@ -143,6 +143,27 @@ class _HomePageState extends State<HomePage> {
                         ],
                       ),
               ),
+          const SizedBox(height: 18),
+          InkWell(
+            onTap: () => context.go('/search'),
+            borderRadius: BorderRadius.circular(22),
+            child: Container(
+              decoration: AppTheme.glassCard(),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: const Row(
+                children: [
+                  Icon(Icons.search_rounded, color: AppColors.deepBlue),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      '학습 자료를 바로 검색해봐',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.lightMuted),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           if (needsOnboarding) ...[
             const SizedBox(height: 18),
             Container(

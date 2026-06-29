@@ -9,24 +9,17 @@ class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.child});
 
   static const _items = [
-    _NavItem(label: '대시보드', icon: Icons.home_rounded, path: '/'),
-    _NavItem(label: '가이드라인', icon: Icons.route_rounded, path: '/guidelines'),
-    _NavItem(label: '커리큘럼', icon: Icons.map_rounded, path: '/curriculums'),
-    _NavItem(label: '학습 캘린더', icon: Icons.calendar_month_rounded, path: '/calendar'),
-    _NavItem(label: '투두 캘린더', icon: Icons.checklist_rounded, path: '/todos'),
-    _NavItem(label: '검색', icon: Icons.search_rounded, path: '/search'),
-    _NavItem(label: '마이페이지', icon: Icons.person_rounded, path: '/profile'),
+    _NavItem(label: '홈', icon: Icons.home_outlined, activeIcon: Icons.home_rounded, path: '/'),
+    _NavItem(label: '학습', icon: Icons.import_contacts_outlined, activeIcon: Icons.import_contacts_rounded, path: '/guidelines'),
+    _NavItem(label: '캘린더', icon: Icons.calendar_month_outlined, activeIcon: Icons.calendar_month_rounded, path: '/calendar'),
+    _NavItem(label: '할일', icon: Icons.rule_folder_outlined, activeIcon: Icons.rule_folder_rounded, path: '/todos'),
+    _NavItem(label: '마이', icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, path: '/profile'),
   ];
 
   @override
   Widget build(BuildContext context) {
     final current = GoRouterState.of(context).matchedLocation;
-    final title = _items
-        .firstWhere(
-          (item) => current == item.path || current.startsWith('${item.path}/'),
-          orElse: () => _items.first,
-        )
-        .label;
+    final title = _resolveTitle(current);
 
     return Scaffold(
       body: Container(
@@ -53,6 +46,15 @@ class AppShell extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _resolveTitle(String current) {
+    if (current == '/curriculums') return '학습';
+    if (current == '/search' || current.startsWith('/search/')) return '홈';
+    return _items.firstWhere(
+      (item) => current == item.path || current.startsWith('${item.path}/'),
+      orElse: () => _items.first,
+    ).label;
   }
 }
 
@@ -87,23 +89,9 @@ class _TopHeader extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Study Pilot',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.lightMuted,
-                    ),
-                  ),
+                  const Text('Study Pilot', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.lightMuted)),
                   const SizedBox(height: 2),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.lightText,
-                    ),
-                  ),
+                  Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.lightText)),
                 ],
               ),
             ),
@@ -111,9 +99,7 @@ class _TopHeader extends StatelessWidget {
               tooltip: '테마 전환',
               onPressed: toggleThemeMode,
               icon: Icon(
-                themeModeNotifier.value == ThemeMode.dark
-                    ? Icons.light_mode_rounded
-                    : Icons.dark_mode_rounded,
+                themeModeNotifier.value == ThemeMode.dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
                 color: AppColors.deepBlue,
               ),
             ),
@@ -128,50 +114,75 @@ class _BottomNav extends StatelessWidget {
   final String currentPath;
   const _BottomNav({required this.currentPath});
 
+  String _resolvePath(String currentPath) {
+    if (currentPath == '/curriculums') return '/guidelines';
+    if (currentPath == '/search' || currentPath.startsWith('/search/')) return '/';
+    return currentPath;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final activePath = _resolvePath(currentPath);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 18),
       child: Container(
-        decoration: AppTheme.glassCard(highlight: true),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.4),
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x12000000),
+              blurRadius: 24,
+              offset: Offset(0, -8),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: AppShell._items.map((item) {
-            final active = currentPath == item.path || currentPath.startsWith('${item.path}/');
+            final active = activePath == item.path || activePath.startsWith('${item.path}/');
             return Expanded(
               child: InkWell(
                 onTap: () => context.go(item.path),
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(24),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 42,
-                        height: 42,
+                        width: 46,
+                        height: 46,
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          color: active
-                              ? const Color(0xFF0066FF)
-                              : Colors.white.withValues(alpha: 0.38),
+                          color: active ? const Color(0xFF0050CB) : Colors.transparent,
+                          shape: BoxShape.circle,
+                          boxShadow: active
+                              ? const [
+                                  BoxShadow(
+                                    color: Color(0x330050CB),
+                                    blurRadius: 15,
+                                    offset: Offset(0, 4),
+                                  ),
+                                ]
+                              : null,
                         ),
                         child: Icon(
-                          item.icon,
-                          size: 22,
-                          color: active ? Colors.white : AppColors.deepBlue,
+                          active ? item.activeIcon : item.icon,
+                          size: 24,
+                          color: active ? Colors.white : const Color(0xFF4B5563),
                         ),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         item.label,
                         maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        overflow: TextOverflow.visible,
                         style: TextStyle(
                           fontSize: 11,
-                          fontWeight: active ? FontWeight.w800 : FontWeight.w600,
-                          color: active ? AppColors.primaryStrong : AppColors.lightMuted,
+                          fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+                          color: active ? const Color(0xFF0050CB) : const Color(0xFF6B7280),
                         ),
                       ),
                     ],
@@ -189,6 +200,7 @@ class _BottomNav extends StatelessWidget {
 class _NavItem {
   final String label;
   final IconData icon;
+  final IconData activeIcon;
   final String path;
-  const _NavItem({required this.label, required this.icon, required this.path});
+  const _NavItem({required this.label, required this.icon, required this.activeIcon, required this.path});
 }
