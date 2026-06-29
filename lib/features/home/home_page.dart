@@ -105,76 +105,44 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(0, 8, 0, 120),
-        children: [
-          Container(
-            decoration: AppTheme.glassCard(highlight: true),
-            padding: const EdgeInsets.all(22),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        '웰컴 백',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.deepBlue,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        user == null ? '학습 여정을 시작해볼까?' : '${user.email?.split('@').first ?? '파일럿'} 캡틴',
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          color: AppColors.lightText,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        user == null
-                            ? '로그인하고 나만의 학습 항로를 설정해줘.'
-                            : '오늘의 비행 계획을 점검하고 다음 목표를 이어가자.',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          height: 1.5,
-                          color: AppColors.lightMuted,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final compactHero = constraints.maxWidth < 420;
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(0, 8, 0, 120),
+            children: [
+              Container(
+                decoration: AppTheme.glassCard(highlight: true),
+                padding: const EdgeInsets.all(22),
+                child: compactHero
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _MiniPill(
-                            icon: Icons.bolt_rounded,
-                            label: user == null ? '비로그인 상태' : '세션 활성',
+                          _HeroContent(
+                            userLabel: user == null ? '학습 여정을 시작해볼까?' : '${user.email?.split('@').first ?? '파일럿'} 캡틴',
+                            userDescription: user == null ? '로그인하고 나만의 학습 항로를 설정해줘.' : '오늘의 비행 계획을 점검하고 다음 목표를 이어가자.',
+                            lastSignedIn: user == null ? '로그인 후 기록 표시' : '최근 로그인 ${_formatLastSignedIn()}',
+                            showLogin: user == null,
                           ),
-                          const SizedBox(width: 8),
-                          _MiniPill(
-                            icon: Icons.schedule_rounded,
-                            label: user == null ? '로그인 후 기록 표시' : '최근 로그인 ${_formatLastSignedIn()}',
+                          const SizedBox(height: 18),
+                          Center(child: _ProgressDial(progress: progress)),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Expanded(
+                            child: _HeroContent(
+                              userLabel: user == null ? '학습 여정을 시작해볼까?' : '${user.email?.split('@').first ?? '파일럿'} 캡틴',
+                              userDescription: user == null ? '로그인하고 나만의 학습 항로를 설정해줘.' : '오늘의 비행 계획을 점검하고 다음 목표를 이어가자.',
+                              lastSignedIn: user == null ? '로그인 후 기록 표시' : '최근 로그인 ${_formatLastSignedIn()}',
+                              showLogin: user == null,
+                            ),
                           ),
+                          const SizedBox(width: 16),
+                          _ProgressDial(progress: progress),
                         ],
                       ),
-                      if (user == null) ...[
-                        const SizedBox(height: 16),
-                        ElevatedButton.icon(
-                          onPressed: () => context.go('/login'),
-                          icon: const Icon(Icons.login_rounded),
-                          label: const Text('로그인하고 시작하기'),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                _ProgressDial(progress: progress),
-              ],
-            ),
-          ),
+              ),
           if (needsOnboarding) ...[
             const SizedBox(height: 18),
             Container(
@@ -419,6 +387,8 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ],
+          );
+        },
       ),
     );
   }
@@ -568,6 +538,47 @@ class _KpiCard extends StatelessWidget {
 
 
 
+
+
+
+class _HeroContent extends StatelessWidget {
+  final String userLabel;
+  final String userDescription;
+  final String lastSignedIn;
+  final bool showLogin;
+  const _HeroContent({required this.userLabel, required this.userDescription, required this.lastSignedIn, required this.showLogin});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('웰컴 백', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.deepBlue)),
+        const SizedBox(height: 6),
+        Text(userLabel, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: AppColors.lightText)),
+        const SizedBox(height: 8),
+        Text(userDescription, style: const TextStyle(fontSize: 14, height: 1.5, color: AppColors.lightMuted)),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _MiniPill(icon: Icons.bolt_rounded, label: showLogin ? '비로그인 상태' : '세션 활성'),
+            _MiniPill(icon: Icons.schedule_rounded, label: lastSignedIn),
+          ],
+        ),
+        if (showLogin) ...[
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () => context.go('/login'),
+            icon: const Icon(Icons.login_rounded),
+            label: const Text('로그인하고 시작하기'),
+          ),
+        ],
+      ],
+    );
+  }
+}
 
 class _OnboardingStepTile extends StatelessWidget {
   final String step;
