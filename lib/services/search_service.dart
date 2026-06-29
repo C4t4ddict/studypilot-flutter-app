@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SearchItemDto {
@@ -8,12 +11,64 @@ class SearchItemDto {
   SearchItemDto({required this.id, required this.title, this.subtitle});
 }
 
+class SearchBookmarkDto {
+  final String id;
+  final String title;
+  final String? subtitle;
+
+  const SearchBookmarkDto({required this.id, required this.title, this.subtitle});
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'subtitle': subtitle,
+      };
+
+  factory SearchBookmarkDto.fromJson(Map<String, dynamic> json) {
+    return SearchBookmarkDto(
+      id: (json['id'] as String?) ?? '',
+      title: (json['title'] as String?) ?? '-',
+      subtitle: json['subtitle'] as String?,
+    );
+  }
+}
+
+class SearchLinkDto {
+  final String itemId;
+  final String targetType;
+  final String targetId;
+  final String targetTitle;
+
+  const SearchLinkDto({
+    required this.itemId,
+    required this.targetType,
+    required this.targetId,
+    required this.targetTitle,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'itemId': itemId,
+        'targetType': targetType,
+        'targetId': targetId,
+        'targetTitle': targetTitle,
+      };
+
+  factory SearchLinkDto.fromJson(Map<String, dynamic> json) {
+    return SearchLinkDto(
+      itemId: (json['itemId'] as String?) ?? '',
+      targetType: (json['targetType'] as String?) ?? '',
+      targetId: (json['targetId'] as String?) ?? '',
+      targetTitle: (json['targetTitle'] as String?) ?? '-',
+    );
+  }
+}
+
 class SearchService {
   static SupabaseClient get _client => Supabase.instance.client;
+  static const _bookmarkKey = 'search_bookmarks';
+  static const _recentQueryKey = 'search_recent_queries';
+  static const _linkKey = 'search_learning_links';
 
-  /// Supabase 실데이터 검색 예시.
-  /// 기본은 public.search_items(title, subtitle) 테이블을 조회한다.
-  /// 테이블/권한 미구성 시 에러를 throw하며 상위에서 fallback 처리 가능.
   static Future<List<SearchItemDto>> searchItems(String query) async {
     if (query.trim().isEmpty) return [];
 
@@ -49,10 +104,68 @@ class SearchService {
   }
 
   static Future<int> getSearchItemCount() async {
-    final res = await _client
-        .from('search_items')
-        .select('id')
-        .count(CountOption.exact);
+    final res = await _client.from('search_items').select('id').count(CountOption.exact);
     return res.count;
+  }
+
+  static Future<List<SearchBookmarkDto>> getBookmarks() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getStringList(_bookmarkKey) ?? const [];
+    return raw.map((e) => jsonDecode(e) as Map<String, dynamic>).map(SearchBookmarkDto.fromJson).toList();
+  }
+
+  static Future<bool> isBookmarked(String id) async {
+    final bookmarks = await getBookmarks();
+    return bookmarks.any((e) => e.id == id);
+  }
+
+  static Future<void> toggleBookmark(SearchItemDto item) async {
+    final prefs = await SharedPreferences.getInstance();
+    final bookmarks = await getBookmarks();
+    final exists = bookmarks.any((e) => e.id == item.id);
+    final next = exists
+        ? bookmarks.where((e) => e.id != item.id).toList()
+        : [SearchBookmarkDto(id: item.id, title: item.title, subtitle: item.subtitle), ...bookmarks].take(20).toList();
+    await prefs.setStringList(_bookmarkKey, next.map((e) => jsonEncode(e.toJson())).toList());
+  }
+
+  static Future<List<String>> getRecentQueries() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getStringList(_recentQueryKey) ?? const [];
+  }
+
+  static Future<void> saveRecentQuery(String query) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    final current = await getRecentQueries();
+    final next = [trimmed, ...current.where((e) => e != trimmed)].take(10).toList();
+    await prefs.setStringList(_recentQueryKey, next);
+  }
+
+  static Future<List<SearchLinkDto>> getLinksForItem(String itemId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getStringList(_linkKey) ?? const [];
+    return raw
+        .map((e) => jsonDecode(e) as Map<String, dynamic>)
+        .map(SearchLinkDto.fromJson)
+        .where((e) => e.itemId == itemId)
+        .toList();
+  }
+
+  static Future<void> saveLink({
+    required String itemId,
+    required String targetType,
+    required String targetId,
+    required String targetTitle,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getStringList(_linkKey) ?? const [];
+    final links = raw.map((e) => jsonDecode(e) as Map<String, dynamic>).map(SearchLinkDto.fromJson).toList();
+    final next = [
+      SearchLinkDto(itemId: itemId, targetType: targetType, targetId: targetId, targetTitle: targetTitle),
+      ...links.where((e) => !(e.itemId == itemId && e.targetType == targetType && e.targetId == targetId)),
+    ];
+    await prefs.setStringList(_linkKey, next.map((e) => jsonEncode(e.toJson())).toList());
   }
 }
