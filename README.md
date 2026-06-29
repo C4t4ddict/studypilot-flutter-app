@@ -1,83 +1,214 @@
-# GUICULUM_FLUTTER
+# Study Pilot Flutter App
 
-Flutter 단일 코드베이스로 Web + Mobile 프로토타입.
+Study Pilot은 **Flutter 단일 코드베이스**로 만든 학습 관리 앱이야.  
+Web + iOS + Android를 함께 가져가면서, 학습 계획부터 실행, 검색, 개인화, 통계까지 한 흐름으로 묶는 걸 목표로 하고 있어.
 
-## 목적
-- 취업용 포트폴리오에서 아키텍처/의사결정 역량 강조
-- 앱/웹 동시 대응
-- Supabase(Auth/RLS) + 반응형 검색(RxDart) 스켈레톤
+---
 
-## 스택
-- Flutter 3.x / Dart
-- supabase_flutter
-- rxdart
-- flutter_dotenv
+## 현재 제품 방향
+- **한국어 우선 UI**
+- **blue glassmorphism + premium productivity** 톤
+- **cloud / flight / route motif**
+- 학습 흐름을 아래 순서로 연결
+  - 가이드라인
+  - 커리큘럼
+  - 할일(Todo)
+  - 캘린더
+  - 검색 자료 연결
+  - 통계 / 리마인드
 
-## 컬러 시스템
-- Primary: `#771EF4`
-- Secondary: `#8249EE`
-- Accent: `#A285F9`
-- Light: Background `#F8F9FD`, Card `#FFFFFF`
-- Dark: Background `#0F0F13`, Card `#1A1A22`
+---
 
-## 구조
-- `lib/core/app_router.dart` : go_router 라우팅
-- `lib/features/home` : 홈 + 인증상태 표시 + 내비게이션
-- `lib/features/login` : 로그인 스켈레톤
-- `lib/features/search` : RxDart 검색 이벤트 스트림
-- `lib/features/home/profile_page.dart` : 프로필 조회 샘플
-- `lib/services/auth_service.dart` : Supabase Auth 래퍼
-- `lib/services/profile_service.dart` : 프로필 데이터 접근
-- `supabase/sql` : RLS 전제 SQL
-- `docs/adr` : 아키텍처 의사결정 문서
+## 핵심 기능
 
-## 실행
-```bash
-cd GUICULUM_FLUTTER
-cp .env.example .env
-# .env에 Supabase URL/KEY 입력
-flutter pub get
-flutter run -d chrome --web-port 53001  # 웹
-flutter run -d ios                       # iOS
-flutter run -d android                   # Android
+### 1. 학습 플로우 관리
+- 가이드라인 생성
+- 커리큘럼 생성
+- Todo 생성 / 상태 변경
+- 학습 캘린더 / Todo 캘린더 분리 운영
+- 가이드라인 → 커리큘럼 → Todo 흐름 연결
+
+### 2. 학습 탭 통합
+- 하단 내비게이션의 **학습** 탭에서 가이드라인 / 커리큘럼 통합 관리
+- 상단 **커리큘럼 선택 드롭다운**
+- 그 아래 **가이드라인 / 커리큘럼 탭 2개**
+- 선택한 커리큘럼 기준으로 관련 정보와 생성 폼을 함께 관리
+
+### 3. 캘린더 기능
+- 학습 캘린더
+- Todo 캘린더
+- 월 / 주 보기
+- 선택 날짜 기준 요약
+- 실행 상태 시각화
+- 커리큘럼 기준 진행률 / 로드맵 요약
+
+### 4. 검색 기능
+- 검색
+- 검색 상세 보기
+- 관심 자료 저장
+- 최근 검색어 저장
+- 검색 자료를 커리큘럼 / Todo와 연결
+
+### 5. 마이페이지 / 개인화
+- 닉네임 저장
+- 목표 직무
+- 학습 스타일 메모
+- 관심 분야
+- 학습 방향 요약 카드
+
+### 6. 홈 대시보드
+- 실행 통계 카드
+- 최근 7일 실행량
+- 커리큘럼별 진척률
+- 오늘 리마인드
+- 온보딩 카드
+
+### 7. 로그인 / 실행 환경
+- 실제 Supabase 환경이 있으면 Supabase 기반 인증 사용
+- 환경 변수가 placeholder인 경우 **데모 모드 로그인** 지원
+- 관리자 빠른 시작 버튼 제공
+- Flutter 플랫폼 러너(iOS / Android / web / macOS 등) 복구 완료
+
+---
+
+## 기술 스택
+- Flutter / Dart
+- `go_router`
+- `supabase_flutter`
+- `shared_preferences`
+- `rxdart`
+- `flutter_dotenv`
+
+---
+
+## 프로젝트 구조
+```text
+lib/
+  core/
+    app_router.dart
+    app_shell.dart
+    app_theme.dart
+  features/
+    home/
+    login/
+    planner/
+    search/
+  services/
 ```
 
-Supabase 초기화/시드는 `docs/setup-supabase.md` 참고.
+### 주요 파일
+- `lib/core/app_router.dart`
+  - 전체 라우팅
+- `lib/core/app_shell.dart`
+  - 공통 레이아웃 / 하단 내비게이션
+- `lib/features/home/home_page.dart`
+  - 홈 대시보드 / 검색 진입 / 리마인드 / 통계
+- `lib/features/planner/learning_page.dart`
+  - 학습 탭 통합 화면
+- `lib/features/planner/calendar_page.dart`
+  - 학습 캘린더
+- `lib/features/planner/todo_page.dart`
+  - Todo 캘린더
+- `lib/features/search/search_page.dart`
+  - 검색 / 최근 검색어
+- `lib/features/search/search_detail_page.dart`
+  - 검색 상세 / 자료-학습 연결
+- `lib/features/home/profile_page.dart`
+  - 마이페이지 / 개인화 설정
+- `lib/services/auth_service.dart`
+  - 인증 / 데모 모드 로그인 처리
+- `lib/services/planner_service.dart`
+  - 가이드라인 / 커리큘럼 / Todo / 통계 집계
+- `lib/services/search_service.dart`
+  - 검색 / 북마크 / 최근 검색 / 자료 연결
+- `lib/services/profile_service.dart`
+  - 프로필 / 학습 설정 저장
 
-## 환경변수
-`.env`
+---
+
+## 현재 하단 내비게이션
+현재 모바일 하단 내비게이션은 5개 구조야.
+
+1. 홈
+2. 학습
+3. 캘린더
+4. 할일
+5. 마이
+
+### 규칙
+- 검색은 하단바에 두지 않고 **홈 상단 검색 진입**으로 처리
+- 학습 탭은 **가이드라인 + 커리큘럼 통합 화면**
+
+---
+
+## 실행 방법
+### 1. 의존성 설치
+```bash
+cd /Users/brian/.openclaw/workspace/studypilot-flutter-app
+flutter pub get
+```
+
+### 2. 환경 변수 준비
+```bash
+cp -n .env.example .env
+```
+
+`.env`에 실제 Supabase 값을 넣으면 실데이터 모드로 동작하고,  
+placeholder 상태면 데모 모드 로그인으로 진입 가능해.
+
 ```env
 SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 SUPABASE_ANON_KEY=YOUR_ANON_KEY
 ```
 
-## 추가 반영 (v0.2)
-- `go_router` 라우팅 적용 (`/`, `/login`, `/search`, `/profile`, `/auth/callback`)
-- Auth 세션 스트림 구독 + signedIn 시 `profiles` 자동 upsert
-- 홈에서 로그인 상태 배지 + 로그인/로그아웃 스낵바 피드백
-- 홈에 대시보드 카드(내 프로필/최근 검색/세션 상태/핵심 플로우)
-  - 실시간 KPI: 검색 인덱스 항목 수, 최근 로그인 시각, guideline/curriculum/done todo 수
-- 핵심 화면 추가
-  - `/guidelines` (가이드라인 생성)
-  - `/curriculums` (기간 기반 커리큘럼 생성)
-  - `/todos` (실행 단위 todo 수동 추가/체크/날짜 지정)
-  - `/calendar` (날짜별 커리큘럼/투두 시각화)
-- 프로필 화면에서 닉네임 수정/저장 + pull-to-refresh
-  - optimistic UI + 실행 취소(Undo)
-- 검색은 Supabase `search_items` 실데이터 조회 + 미구성시 fallback
-- 검색 화면에 로딩/에러/카드형 결과 UI 반영
-- 검색 결과 탭 시 `/search/:id` 상세 라우팅 + Supabase row 상세 조회
-- 캘린더 고도화
-  - 월/주 보기 토글
-  - Todo 상태 필터 칩(전체/미완료/진행중/완료)
-  - 웹 URL 쿼리 동기화(`view`, `filter`, `date`)
-  - QR/공유시트 링크 공유
-  - Todo 선택 다중 이동(선택 항목 날짜 이동)
-  - Todo 우선순위(low/medium/high) 및 캘린더 셀 완료율 미니바
-- OAuth redirect 분기
-  - Web: `${Uri.base.origin}/auth/callback`
-  - Mobile: `guiculum://auth/callback`
+### 3. 실행
+```bash
+flutter run -d chrome
+flutter run -d ios
+flutter run -d android
+```
 
-## 메모
-- Web/Android/iOS 실서비스 전환 시 redirect URI/딥링크 도메인 설정 필요
-- Supabase SQL(`supabase/sql/001_profiles.sql`, `002_seed_search_items.sql`, `003_planner_core.sql`)을 먼저 적용해야 핵심 플로우(가이드라인→커리큘럼→투두)가 동작
+### 4. 점검
+```bash
+flutter doctor -v
+flutter devices
+flutter analyze
+flutter test
+```
+
+---
+
+## 데모 모드 안내
+실제 Supabase 프로젝트가 아직 연결되지 않은 환경에서도 화면/흐름 점검이 가능하도록 데모 모드를 넣어뒀어.
+
+### 동작 방식
+- `.env`가 placeholder 값이면 데모 모드 활성화
+- 로그인 / 회원가입 / 관리자 빠른 시작이 로컬 세션 기반으로 동작
+- UI 흐름 점검용으로 사용 가능
+
+### 주의
+- 데모 모드는 **실서비스 인증 대체가 아님**
+- 실제 배포/운영 전에는 반드시 Supabase 실환경으로 검증해야 함
+
+---
+
+## 최근 반영된 주요 변경
+- 학습 탭에서 가이드라인 / 커리큘럼 통합
+- 홈 상단 검색 진입 추가
+- 하단 내비게이션 5개 구조 정리
+- 홈 메인 카드 반응형 보강
+- 디버그 배너 제거
+- 대시보드 통계 / 리마인드 추가
+- 검색 자료를 커리큘럼 / Todo와 연결 가능하게 확장
+- 개인화 설정(목표 직무 / 학습 스타일 / 관심 분야) 추가
+- 플랫폼 러너 복구로 iOS 시뮬레이터 실행 가능 상태 복원
+
+---
+
+## 참고
+- 이 README는 **민감 정보 없이 현재 제품 구조와 개발 상태만 정리**한 문서야.
+- 실제 배포 전에는
+  - Supabase 인증/정합성
+  - 실기기 검증
+  - 캘린더 / 통계 / 자료 연결 흐름 최종 점검
+이 추가로 필요해.
