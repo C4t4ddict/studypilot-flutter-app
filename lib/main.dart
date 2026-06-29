@@ -12,15 +12,20 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: '.env');
 
-  final url = dotenv.env['SUPABASE_URL'];
-  final anonKey = dotenv.env['SUPABASE_ANON_KEY'];
+  final url = dotenv.env['SUPABASE_URL'] ?? '';
+  final anonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+  final hasRealSupabase = url.isNotEmpty &&
+      anonKey.isNotEmpty &&
+      !url.contains('YOUR_PROJECT') &&
+      !anonKey.contains('YOUR_ANON_KEY');
 
-  if (url == null || anonKey == null || url.isEmpty || anonKey.isEmpty) {
-    runApp(const MissingEnvApp());
-    return;
+  await AuthService.configureDemoMode(!hasRealSupabase);
+  await AuthService.restoreDemoSessionIfNeeded();
+
+  if (hasRealSupabase) {
+    await Supabase.initialize(url: url, anonKey: anonKey);
   }
 
-  await Supabase.initialize(url: url, anonKey: anonKey);
   runApp(const GuiculumApp());
 }
 
@@ -33,8 +38,7 @@ class GuiculumApp extends StatelessWidget {
       stream: AuthService.authStateChanges(),
       builder: (context, snapshot) {
         final authState = snapshot.data;
-        if (authState?.event == AuthChangeEvent.signedIn) {
-          // 최초 로그인 시 프로필 자동 upsert
+        if (!AuthService.isDemoMode && authState?.event == AuthChangeEvent.signedIn) {
           ProfileService.upsertMyProfileIfNeeded();
         }
 
@@ -47,31 +51,11 @@ class GuiculumApp extends StatelessWidget {
               darkTheme: AppTheme.dark(),
               themeMode: mode,
               routerConfig: appRouter,
+              debugShowCheckedModeBanner: false,
             );
           },
         );
       },
-    );
-  }
-}
-
-class MissingEnvApp extends StatelessWidget {
-  const MissingEnvApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Padding(
-            padding: EdgeInsets.all(24),
-            child: Text(
-              'Missing SUPABASE env.\nCopy .env.example -> .env and fill values.',
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
