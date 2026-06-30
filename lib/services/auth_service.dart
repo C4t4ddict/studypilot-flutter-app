@@ -55,14 +55,14 @@ class AuthService {
   static String normalizeLoginId(String idOrEmail) {
     final v = idOrEmail.trim();
     if (v.contains('@')) return v;
-    return '$v@guiculum.local';
+    return '$v@study-pilot.local';
   }
 
   static Future<void> signInWithGoogle() async {
     if (_demoMode) {
       throw Exception('데모 모드에서는 Google 로그인을 지원하지 않아. 관리자 빠른 시작을 눌러줘.');
     }
-    final redirectTo = kIsWeb ? '${Uri.base.origin}/auth/callback' : 'guiculum://auth/callback';
+    final redirectTo = kIsWeb ? '${Uri.base.origin}/auth/callback' : 'study-pilot://auth/callback';
 
     await _client.auth.signInWithOAuth(
       OAuthProvider.google,
