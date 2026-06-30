@@ -46,7 +46,7 @@ class GuiculumApp extends StatelessWidget {
           valueListenable: themeModeNotifier,
           builder: (context, mode, _) {
             return MaterialApp.router(
-              title: 'GUICULUM',
+              title: 'Study Pilot',
               theme: AppTheme.light(),
               darkTheme: AppTheme.dark(),
               themeMode: mode,
