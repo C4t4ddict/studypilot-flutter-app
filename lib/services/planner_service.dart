@@ -10,6 +10,14 @@ class PlannerService {
   static const _guidelineKey = 'demo_guidelines';
   static const _curriculumKey = 'demo_curriculums';
   static const _todoKey = 'demo_todos';
+  static const segmentPalette = [
+    '0xFF0050CB',
+    '0xFF006689',
+    '0xFF6FCEFE',
+    '0xFF445A7F',
+    '0xFF7B61FF',
+    '0xFF2E8B57',
+  ];
 
   static String _uid() {
     final u = _c.auth.currentUser;
@@ -28,6 +36,85 @@ class PlannerService {
   static Future<void> _setDemoList(String key, List<Map<String, dynamic>> value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(key, value.map(jsonEncode).toList());
+  }
+
+  static List<Map<String, dynamic>> normalizeSegments(dynamic rawSegments) {
+    if (rawSegments is! List) return const [];
+    return rawSegments
+        .whereType<Map>()
+        .map((segment) => Map<String, dynamic>.from(segment))
+        .map((segment) => {
+              'id': segment['id']?.toString(),
+              'name': segment['name']?.toString() ?? '',
+              'end_date': segment['end_date']?.toString() ?? '',
+              'order': (segment['order'] as num?)?.toInt() ?? 0,
+              'color': segment['color']?.toString() ?? segmentPalette.first,
+            })
+        .where((segment) => segment['name'].toString().trim().isNotEmpty && segment['end_date'].toString().isNotEmpty)
+        .toList()
+      ..sort((a, b) => ((a['order'] as int?) ?? 0).compareTo((b['order'] as int?) ?? 0));
+  }
+
+  static List<Map<String, dynamic>> buildCurriculumSegments(Map<String, dynamic> curriculum) {
+    final startDate = DateTime.tryParse((curriculum['start_date'] ?? '').toString());
+    final endDate = DateTime.tryParse((curriculum['end_date'] ?? '').toString());
+    if (startDate == null || endDate == null) return const [];
+
+    final normalized = normalizeSegments(curriculum['segments']);
+    if (normalized.isEmpty) {
+      return [
+        {
+          'id': '${curriculum['id']}-segment-default',
+          'name': curriculum['title'] ?? '기본 구간',
+          'start_date': startDate.toIso8601String().substring(0, 10),
+          'end_date': endDate.toIso8601String().substring(0, 10),
+          'order': 0,
+          'color': segmentPalette.first,
+        },
+      ];
+    }
+
+    final built = <Map<String, dynamic>>[];
+    var currentStart = startDate;
+    for (final segment in normalized) {
+      final segmentEnd = DateTime.tryParse(segment['end_date']?.toString() ?? '');
+      if (segmentEnd == null) continue;
+      built.add({
+        'id': segment['id'] ?? _demoId('segment'),
+        'name': segment['name'],
+        'start_date': currentStart.toIso8601String().substring(0, 10),
+        'end_date': segmentEnd.toIso8601String().substring(0, 10),
+        'order': segment['order'],
+        'color': segment['color'] ?? segmentPalette[built.length % segmentPalette.length],
+      });
+      currentStart = segmentEnd.add(const Duration(days: 1));
+    }
+
+    if (currentStart.isBefore(endDate) || currentStart.isAtSameMomentAs(endDate)) {
+      built.add({
+        'id': '${curriculum['id']}-segment-final',
+        'name': normalized.isEmpty ? (curriculum['title'] ?? '마무리') : '${normalized.last['name']} 이후',
+        'start_date': currentStart.toIso8601String().substring(0, 10),
+        'end_date': endDate.toIso8601String().substring(0, 10),
+        'order': built.length,
+        'color': segmentPalette[built.length % segmentPalette.length],
+      });
+    }
+
+    return built;
+  }
+
+  static Map<String, dynamic>? findSegmentForDate(Map<String, dynamic> curriculum, DateTime day) {
+    for (final segment in buildCurriculumSegments(curriculum)) {
+      final start = DateTime.tryParse((segment['start_date'] ?? '').toString());
+      final end = DateTime.tryParse((segment['end_date'] ?? '').toString());
+      if (start == null || end == null) continue;
+      final current = DateTime(day.year, day.month, day.day);
+      if (!current.isBefore(DateTime(start.year, start.month, start.day)) && !current.isAfter(DateTime(end.year, end.month, end.day))) {
+        return segment;
+      }
+    }
+    return null;
   }
 
   static Future<List<Map<String, dynamic>>> listGuidelines() async {
@@ -57,10 +144,11 @@ class PlannerService {
     if (AuthService.isDemoMode) {
       return _getDemoList(_curriculumKey);
     }
-    return (await _c.from('curriculums').select('*, guidelines(title,target_role)').order('start_date', ascending: true)).cast<Map<String, dynamic>>();
+    return (await _c.from('curriculums').select('*, guidelines(title,target_role), segments').order('start_date', ascending: true)).cast<Map<String, dynamic>>();
   }
 
-  static Future<void> createCurriculum({required String guidelineId, required String title, required DateTime start, required DateTime end}) async {
+  static Future<void> createCurriculum({required String guidelineId, required String title, required DateTime start, required DateTime end, List<Map<String, dynamic>> segments = const []}) async {
+    final normalizedSegments = normalizeSegments(segments);
     if (AuthService.isDemoMode) {
       final current = await _getDemoList(_curriculumKey);
       current.add({
@@ -69,6 +157,7 @@ class PlannerService {
         'title': title,
         'start_date': start.toIso8601String().substring(0, 10),
         'end_date': end.toIso8601String().substring(0, 10),
+        'segments': normalizedSegments,
       });
       await _setDemoList(_curriculumKey, current);
       return;
@@ -79,6 +168,7 @@ class PlannerService {
       'title': title,
       'start_date': start.toIso8601String().substring(0, 10),
       'end_date': end.toIso8601String().substring(0, 10),
+      'segments': normalizedSegments,
     });
   }
 

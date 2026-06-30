@@ -129,6 +129,7 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
             return t['curriculum_id'] == _curriculumId;
           }).where(_todoPass).toList();
 
+          final selectedCurriculum = _curriculumId == null ? null : curriculums.cast<Map<String, dynamic>?>().firstWhere((c) => c?['id'] == _curriculumId, orElse: () => curriculums.isNotEmpty ? curriculums.first : null);
           final visibleDays = _viewMode == 'week' ? _weekDays(_selected) : _monthDays(_displayMonth);
           final selectedDayTodos = selectedCurriculumTodos.where((t) => _isSameDay(_selected, t['due_date'] as String?)).toList();
           final completedCount = selectedDayTodos.where((t) => (t['status'] ?? 'todo') == 'done').length;
@@ -216,6 +217,7 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
                         final selected = day.year == _selected.year && day.month == _selected.month && day.day == _selected.day;
                         final inMonth = day.month == _displayMonth.month;
                         final hasTodo = selectedCurriculumTodos.any((t) => _isSameDay(day, t['due_date'] as String?));
+                        final segment = selectedCurriculum == null ? null : PlannerService.findSegmentForDate(selectedCurriculum, day);
                         return InkWell(
                           onTap: () => setState(() => _selected = day),
                           borderRadius: BorderRadius.circular(999),
@@ -240,7 +242,21 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              if (hasTodo)
+                              if (segment != null)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Color(int.parse((segment['color'] ?? PlannerService.segmentPalette.first).toString())).withValues(alpha: 0.18),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text(
+                                    (segment['name'] ?? '-').toString(),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: Color(int.parse((segment['color'] ?? PlannerService.segmentPalette.first).toString()))),
+                                  ),
+                                )
+                              else if (hasTodo)
                                 Container(width: 8, height: 8, decoration: BoxDecoration(color: selected ? Colors.white : const Color(0xFF006689), shape: BoxShape.circle)),
                             ],
                           ),
