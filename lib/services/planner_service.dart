@@ -93,7 +93,7 @@ class PlannerService {
     if (currentStart.isBefore(endDate) || currentStart.isAtSameMomentAs(endDate)) {
       built.add({
         'id': '${curriculum['id']}-segment-final',
-        'name': normalized.isEmpty ? (curriculum['title'] ?? '마무리') : '${normalized.last['name']} 이후',
+        'name': normalized.isEmpty ? (curriculum['title'] ?? '마무리') : '최종 정리',
         'start_date': currentStart.toIso8601String().substring(0, 10),
         'end_date': endDate.toIso8601String().substring(0, 10),
         'order': built.length,
