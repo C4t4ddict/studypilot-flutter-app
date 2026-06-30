@@ -1,4 +1,4 @@
--- GUICULUM core: guideline -> curriculum -> todo
+-- Study Pilot core: guideline -> curriculum -> todo
 
 create table if not exists public.guidelines (
   id uuid primary key default gen_random_uuid(),

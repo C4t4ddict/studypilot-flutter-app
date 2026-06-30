@@ -240,7 +240,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        '아이디만 입력하면 내부적으로 @guiculum.local 이메일로 변환해서 사용해.',
+                        '아이디만 입력하면 내부적으로 @study-pilot.local 이메일로 변환해서 사용해.',
                         style: TextStyle(
                           fontSize: 12,
                           height: 1.5,
