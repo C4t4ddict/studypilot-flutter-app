@@ -22,6 +22,7 @@ class _LearningPageState extends State<LearningPage> {
   DateTime _end = DateTime.now().add(const Duration(days: 28));
   bool _savingGuideline = false;
   bool _savingCurriculum = false;
+  final List<_SegmentDraft> _segmentDrafts = [];
 
   @override
   void dispose() {
@@ -29,6 +30,9 @@ class _LearningPageState extends State<LearningPage> {
     _guidelineTitleCtrl.dispose();
     _guidelineNotesCtrl.dispose();
     _curriculumTitleCtrl.dispose();
+    for (final segment in _segmentDrafts) {
+      segment.dispose();
+    }
     super.dispose();
   }
 
@@ -54,6 +58,53 @@ class _LearningPageState extends State<LearningPage> {
     }
   }
 
+  String? _validateSegments() {
+    DateTime previous = _start;
+    for (final segment in _segmentDrafts) {
+      if (segment.nameCtrl.text.trim().isEmpty) {
+        return '분기점 구간 이름을 입력해줘.';
+      }
+      if (!segment.endDate.isAfter(previous)) {
+        return '분기점 종료일은 이전 구간보다 뒤여야 해.';
+      }
+      if (segment.endDate.isAfter(_end)) {
+        return '분기점 종료일은 전체 종료일보다 늦을 수 없어.';
+      }
+      previous = segment.endDate;
+    }
+    return null;
+  }
+
+  void _addSegment() {
+    setState(() {
+      _segmentDrafts.add(
+        _SegmentDraft(
+          color: PlannerService.segmentPalette[_segmentDrafts.length % PlannerService.segmentPalette.length],
+          endDate: _segmentDrafts.isEmpty ? _start.add(const Duration(days: 7)) : _segmentDrafts.last.endDate.add(const Duration(days: 7)),
+        ),
+      );
+    });
+  }
+
+  void _removeSegment(int index) {
+    setState(() {
+      _segmentDrafts[index].dispose();
+      _segmentDrafts.removeAt(index);
+    });
+  }
+
+  Future<void> _pickSegmentDate(int index) async {
+    final picked = await showDatePicker(
+      context: context,
+      firstDate: _start,
+      lastDate: _end,
+      initialDate: _segmentDrafts[index].endDate,
+    );
+    if (picked != null) {
+      setState(() => _segmentDrafts[index].endDate = picked);
+    }
+  }
+
   Future<void> _createCurriculum(String? guidelineId) async {
     if (guidelineId == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('먼저 연결할 가이드라인이 필요해.')));
@@ -63,6 +114,11 @@ class _LearningPageState extends State<LearningPage> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('커리큘럼 제목을 입력해줘.')));
       return;
     }
+    final validationError = _validateSegments();
+    if (validationError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(validationError)));
+      return;
+    }
     setState(() => _savingCurriculum = true);
     try {
       await PlannerService.createCurriculum(
@@ -70,8 +126,13 @@ class _LearningPageState extends State<LearningPage> {
         title: _curriculumTitleCtrl.text.trim(),
         start: _start,
         end: _end,
+        segments: _segmentDrafts.asMap().entries.map((entry) => entry.value.toJson(entry.key)).toList(),
       );
       _curriculumTitleCtrl.clear();
+      for (final segment in _segmentDrafts) {
+        segment.dispose();
+      }
+      _segmentDrafts.clear();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('커리큘럼을 생성했어.')));
       setState(() {});
@@ -205,6 +266,10 @@ class _LearningPageState extends State<LearningPage> {
                   },
                   onCreate: () => _createCurriculum(linkedGuideline?['id'] as String?),
                   fmt: _fmt,
+                  segmentDrafts: _segmentDrafts,
+                  onAddSegment: _addSegment,
+                  onRemoveSegment: _removeSegment,
+                  onPickSegmentDate: _pickSegmentDate,
                 ),
             ],
           );
@@ -316,11 +381,35 @@ class _CurriculumPanel extends StatelessWidget {
   final Future<void> Function() onPickStart;
   final Future<void> Function() onPickEnd;
   final String Function(DateTime) fmt;
+  final List<_SegmentDraft> segmentDrafts;
+  final VoidCallback onAddSegment;
+  final void Function(int index) onRemoveSegment;
+  final Future<void> Function(int index) onPickSegmentDate;
 
-  const _CurriculumPanel({required this.selectedCurriculum, required this.linkedGuideline, required this.curriculumTodos, required this.progress, required this.completedTodos, required this.titleCtrl, required this.start, required this.end, required this.saving, required this.onCreate, required this.onPickStart, required this.onPickEnd, required this.fmt});
+  const _CurriculumPanel({
+    required this.selectedCurriculum,
+    required this.linkedGuideline,
+    required this.curriculumTodos,
+    required this.progress,
+    required this.completedTodos,
+    required this.titleCtrl,
+    required this.start,
+    required this.end,
+    required this.saving,
+    required this.onCreate,
+    required this.onPickStart,
+    required this.onPickEnd,
+    required this.fmt,
+    required this.segmentDrafts,
+    required this.onAddSegment,
+    required this.onRemoveSegment,
+    required this.onPickSegmentDate,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final currentSegments = selectedCurriculum == null ? const <Map<String, dynamic>>[] : PlannerService.buildCurriculumSegments(selectedCurriculum!);
+
     return Column(
       children: [
         Container(
@@ -333,13 +422,28 @@ class _CurriculumPanel extends StatelessWidget {
               const SizedBox(height: 12),
               TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: '커리큘럼 제목')),
               const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(child: _DateCard(label: '시작일', value: fmt(start), onTap: onPickStart)),
-                  const SizedBox(width: 12),
-                  Expanded(child: _DateCard(label: '종료일', value: fmt(end), onTap: onPickEnd)),
-                ],
+              _VerticalTimelineDateCard(label: '시작일', value: fmt(start), onTap: onPickStart),
+              const SizedBox(height: 10),
+              ...List.generate(segmentDrafts.length, (index) {
+                final segment = segmentDrafts[index];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _SegmentDraftCard(
+                    index: index,
+                    colorHex: segment.color,
+                    nameCtrl: segment.nameCtrl,
+                    endDateLabel: fmt(segment.endDate),
+                    onPickDate: () => onPickSegmentDate(index),
+                    onRemove: () => onRemoveSegment(index),
+                  ),
+                );
+              }),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(onPressed: onAddSegment, icon: const Icon(Icons.add_circle_rounded), label: const Text('분기점 추가')),
               ),
+              const SizedBox(height: 4),
+              _VerticalTimelineDateCard(label: '종료일', value: fmt(end), onTap: onPickEnd),
               const SizedBox(height: 14),
               SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: saving ? null : onCreate, icon: const Icon(Icons.map_rounded), label: Text(saving ? '생성 중...' : '새 커리큘럼 작성'))),
             ],
@@ -360,6 +464,12 @@ class _CurriculumPanel extends StatelessWidget {
                 _InfoCard(label: '커리큘럼 제목', value: selectedCurriculum?['title'] ?? '-'),
                 _InfoCard(label: '연결된 가이드라인', value: linkedGuideline?['title'] ?? '연결 안 됨'),
                 _InfoCard(label: '기간', value: '${selectedCurriculum?['start_date'] ?? '-'} ~ ${selectedCurriculum?['end_date'] ?? '-'}'),
+                if (currentSegments.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  const Text('현재 구간', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 10),
+                  ...currentSegments.map((segment) => _SegmentOverviewCard(segment: segment)),
+                ],
                 const SizedBox(height: 10),
                 LinearProgressIndicator(value: progress, minHeight: 10, borderRadius: BorderRadius.circular(999)),
                 const SizedBox(height: 8),
@@ -369,6 +479,102 @@ class _CurriculumPanel extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _VerticalTimelineDateCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final Future<void> Function() onTap;
+  const _VerticalTimelineDateCard({required this.label, required this.value, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: [
+            Container(width: 14, height: 14, decoration: const BoxDecoration(color: AppColors.primaryStrong, shape: BoxShape.circle)),
+            Container(width: 2, height: 56, color: AppColors.primaryStrong.withValues(alpha: 0.25)),
+          ],
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: _DateCard(label: label, value: value, onTap: onTap)),
+      ],
+    );
+  }
+}
+
+class _SegmentDraftCard extends StatelessWidget {
+  final int index;
+  final String colorHex;
+  final TextEditingController nameCtrl;
+  final String endDateLabel;
+  final VoidCallback onPickDate;
+  final VoidCallback onRemove;
+
+  const _SegmentDraftCard({required this.index, required this.colorHex, required this.nameCtrl, required this.endDateLabel, required this.onPickDate, required this.onRemove});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Color(int.parse(colorHex));
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: [
+            Container(width: 14, height: 14, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+            Container(width: 2, height: 110, color: color.withValues(alpha: 0.25)),
+          ],
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.34), borderRadius: BorderRadius.circular(18)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text('분기점 ${index + 1}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.lightText)),
+                    const Spacer(),
+                    IconButton(onPressed: onRemove, icon: const Icon(Icons.close_rounded, size: 18)),
+                  ],
+                ),
+                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: '구간 이름')),
+                const SizedBox(height: 10),
+                OutlinedButton.icon(onPressed: onPickDate, icon: const Icon(Icons.event_rounded), label: Text('분기점 종료일 $endDateLabel')),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SegmentOverviewCard extends StatelessWidget {
+  final Map<String, dynamic> segment;
+  const _SegmentOverviewCard({required this.segment});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Color(int.parse((segment['color'] ?? PlannerService.segmentPalette.first).toString()));
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(16), border: Border.all(color: color.withValues(alpha: 0.25))),
+      child: Row(
+        children: [
+          Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          const SizedBox(width: 10),
+          Expanded(child: Text(segment['name'] ?? '-', style: const TextStyle(fontWeight: FontWeight.w800))),
+          Text('${segment['start_date']} ~ ${segment['end_date']}', style: const TextStyle(fontSize: 12, color: AppColors.lightMuted)),
+        ],
+      ),
     );
   }
 }
@@ -414,5 +620,25 @@ class _InfoCard extends StatelessWidget {
         Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.lightText)),
       ]),
     );
+  }
+}
+
+class _SegmentDraft {
+  final TextEditingController nameCtrl = TextEditingController();
+  DateTime endDate;
+  final String color;
+
+  _SegmentDraft({required this.color, required this.endDate});
+
+  Map<String, dynamic> toJson(int order) => {
+        'id': 'segment-$order-${DateTime.now().microsecondsSinceEpoch}',
+        'name': nameCtrl.text.trim(),
+        'end_date': endDate.toIso8601String().substring(0, 10),
+        'order': order,
+        'color': color,
+      };
+
+  void dispose() {
+    nameCtrl.dispose();
   }
 }
