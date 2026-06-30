@@ -251,9 +251,10 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
                                   ),
                                   child: Text(
                                     (segment['name'] ?? '-').toString(),
-                                    maxLines: 1,
+                                    maxLines: 2,
+                                    textAlign: TextAlign.center,
                                     overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: Color(int.parse((segment['color'] ?? PlannerService.segmentPalette.first).toString()))),
+                                    style: TextStyle(fontSize: 7, height: 1.1, fontWeight: FontWeight.w700, color: Color(int.parse((segment['color'] ?? PlannerService.segmentPalette.first).toString()))),
                                   ),
                                 )
                               else if (hasTodo)

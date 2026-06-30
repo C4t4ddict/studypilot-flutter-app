@@ -497,7 +497,7 @@ class _VerticalTimelineDateCard extends StatelessWidget {
         Column(
           children: [
             Container(width: 14, height: 14, decoration: const BoxDecoration(color: AppColors.primaryStrong, shape: BoxShape.circle)),
-            Container(width: 2, height: 56, color: AppColors.primaryStrong.withValues(alpha: 0.25)),
+            Container(width: 2, height: 44, color: AppColors.primaryStrong.withValues(alpha: 0.25)),
           ],
         ),
         const SizedBox(width: 12),
@@ -525,8 +525,8 @@ class _SegmentDraftCard extends StatelessWidget {
       children: [
         Column(
           children: [
-            Container(width: 14, height: 14, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-            Container(width: 2, height: 110, color: color.withValues(alpha: 0.25)),
+            Container(width: 14, height: 14, decoration: BoxDecoration(color: color, shape: BoxShape.circle, boxShadow: [BoxShadow(color: color.withValues(alpha: 0.25), blurRadius: 10)])),
+            Container(width: 2, height: 96, color: color.withValues(alpha: 0.25)),
           ],
         ),
         const SizedBox(width: 12),
@@ -546,7 +546,7 @@ class _SegmentDraftCard extends StatelessWidget {
                 ),
                 TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: '구간 이름')),
                 const SizedBox(height: 10),
-                OutlinedButton.icon(onPressed: onPickDate, icon: const Icon(Icons.event_rounded), label: Text('분기점 종료일 $endDateLabel')),
+                Row(children: [Expanded(child: OutlinedButton.icon(onPressed: onPickDate, icon: const Icon(Icons.event_rounded), label: Text('분기점 종료일 $endDateLabel')))]),
               ],
             ),
           ),
