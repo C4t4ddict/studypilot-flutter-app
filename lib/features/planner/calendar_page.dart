@@ -109,7 +109,7 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
 
   String _segmentLabel(String name) {
     final trimmed = name.trim();
-    return trimmed.runes.length <= 7 ? trimmed : '\${String.fromCharCodes(trimmed.runes.take(7))}...';
+    return trimmed.runes.length <= 7 ? trimmed : '${String.fromCharCodes(trimmed.runes.take(7))}...';
   }
 
   Future<void> _showDayDetailSheet({required DateTime day, required Map<String, dynamic>? curriculum, required List<Map<String, dynamic>> todos}) async {
@@ -138,7 +138,8 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
           final curriculums = snapshot.data![0];
           final todos = snapshot.data![1];
           if (_curriculumId == null && curriculums.isNotEmpty) {
-            _curriculumId = curriculums.first['id'] as String;
+            final sample = curriculums.cast<Map<String, dynamic>>().where((c) => c['id'] == 'demo-curriculum-study-pilot');
+            _curriculumId = (sample.isNotEmpty ? sample.first['id'] : curriculums.first['id']) as String;
           }
 
           final selectedCurriculumTodos = todos.where((t) {
