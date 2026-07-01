@@ -229,7 +229,7 @@ class _TodoPageState extends State<TodoPage> {
                       itemCount: visibleDays.length,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 7, mainAxisSpacing: 8),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 7, mainAxisSpacing: 10, crossAxisSpacing: 2, mainAxisExtent: 58),
                       itemBuilder: (context, index) {
                         final day = visibleDays[index];
                         final selected = day.year == _selectedDate.year && day.month == _selectedDate.month && day.day == _selectedDate.day;
@@ -239,11 +239,12 @@ class _TodoPageState extends State<TodoPage> {
                           onTap: () => setState(() => _selectedDate = day),
                           borderRadius: BorderRadius.circular(999),
                           child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.start,
                             children: [
+                              const SizedBox(height: 2),
                               Container(
-                                width: 42,
-                                height: 42,
+                                width: 40,
+                                height: 40,
                                 decoration: BoxDecoration(
                                   color: selected ? AppColors.primaryStrong : (dayTodos >= 3 ? const Color(0xFFDAE1FF) : Colors.transparent),
                                   shape: BoxShape.circle,
