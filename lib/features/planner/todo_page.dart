@@ -44,6 +44,31 @@ class _TodoPageState extends State<TodoPage> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _showHelpModal() async {
+    await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('할일 탭 안내'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('• 이 탭은 날짜별 실행 미션을 확인하고 상태를 바꾸는 공간이야.'),
+            SizedBox(height: 8),
+            Text('• 커리큘럼을 고르면 해당 학습 항로의 할일만 골라서 볼 수 있어.'),
+            SizedBox(height: 8),
+            Text('• 날짜를 누르면 그날 해야 할 할일 카드가 아래에 보여.'),
+            SizedBox(height: 8),
+            Text('• 카드를 누르면 대기 → 진행중 → 완료 순서로 상태가 바뀌어.'),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('닫기')),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -83,14 +108,27 @@ class _TodoPageState extends State<TodoPage> {
                     child: const Icon(Icons.person_rounded, color: AppColors.primaryStrong),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text('Mission Log', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: AppColors.primaryStrong)),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        const Text('Mission Log', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: AppColors.primaryStrong)),
+                        const SizedBox(width: 6),
+                        GestureDetector(
+                          onTap: _showHelpModal,
+                          child: Container(
+                            width: 22,
+                            height: 22,
+                            decoration: BoxDecoration(color: Colors.grey.shade400, shape: BoxShape.circle),
+                            alignment: Alignment.center,
+                            child: const Text('?', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white)),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_rounded, color: AppColors.primaryStrong)),
                 ],
               ),
-              const SizedBox(height: 18),
-              const Text('Execute your flight plan with precision.', style: TextStyle(fontSize: 18, color: AppColors.lightMuted)),
               const SizedBox(height: 14),
               Container(
                 decoration: AppTheme.glassCard(),
