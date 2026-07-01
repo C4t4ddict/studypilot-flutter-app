@@ -107,6 +107,23 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
     setState(() => _displayMonth = DateTime(_displayMonth.year, _displayMonth.month + delta, 1));
   }
 
+  String _segmentLabel(String name) {
+    final trimmed = name.trim();
+    return trimmed.runes.length <= 7 ? trimmed : '\${String.fromCharCodes(trimmed.runes.take(7))}...';
+  }
+
+  Future<void> _showDayDetailSheet({required DateTime day, required Map<String, dynamic>? curriculum, required List<Map<String, dynamic>> todos}) async {
+    final dayTodos = todos.where((t) => _isSameDay(day, t['due_date'] as String?)).toList();
+    final segment = curriculum == null ? null : PlannerService.findSegmentForDate(curriculum, day);
+    final allSegments = curriculum == null ? const <Map<String, dynamic>>[] : PlannerService.buildCurriculumSegments(curriculum);
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _DayDetailSheet(day: day, segment: segment, allSegments: allSegments, todos: dayTodos),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -218,8 +235,12 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
                         final inMonth = day.month == _displayMonth.month;
                         final hasTodo = selectedCurriculumTodos.any((t) => _isSameDay(day, t['due_date'] as String?));
                         final segment = selectedCurriculum == null ? null : PlannerService.findSegmentForDate(selectedCurriculum, day);
+                        final dayTodoCount = selectedCurriculumTodos.where((t) => _isSameDay(day, t['due_date'] as String?)).length;
                         return InkWell(
-                          onTap: () => setState(() => _selected = day),
+                          onTap: () {
+                            setState(() => _selected = day);
+                            _showDayDetailSheet(day: day, curriculum: selectedCurriculum, todos: selectedCurriculumTodos);
+                          },
                           borderRadius: BorderRadius.circular(999),
                           child: Column(
                             children: [
@@ -243,22 +264,42 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
                               ),
                               const SizedBox(height: 4),
                               if (segment != null)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Color(int.parse((segment['color'] ?? PlannerService.segmentPalette.first).toString())).withValues(alpha: 0.18),
-                                    borderRadius: BorderRadius.circular(999),
-                                  ),
-                                  child: Text(
-                                    (segment['name'] ?? '-').toString(),
-                                    maxLines: 2,
-                                    textAlign: TextAlign.center,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(fontSize: 7, height: 1.1, fontWeight: FontWeight.w700, color: Color(int.parse((segment['color'] ?? PlannerService.segmentPalette.first).toString()))),
-                                  ),
+                                Column(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Color(int.parse((segment['color'] ?? PlannerService.segmentPalette.first).toString())).withValues(alpha: 0.18),
+                                        borderRadius: BorderRadius.circular(999),
+                                      ),
+                                      child: Text(
+                                        _segmentLabel((segment['name'] ?? '-').toString()),
+                                        maxLines: 2,
+                                        textAlign: TextAlign.center,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(fontSize: 7, height: 1.1, fontWeight: FontWeight.w700, color: Color(int.parse((segment['color'] ?? PlannerService.segmentPalette.first).toString()))),
+                                      ),
+                                    ),
+                                    if (dayTodoCount > 0) ...[
+                                      const SizedBox(height: 3),
+                                      Container(
+                                        width: 18,
+                                        height: 18,
+                                        alignment: Alignment.center,
+                                        decoration: BoxDecoration(color: selected ? Colors.white : const Color(0xFF006689), shape: BoxShape.circle),
+                                        child: Text('$dayTodoCount', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: selected ? const Color(0xFF006689) : Colors.white)),
+                                      ),
+                                    ],
+                                  ],
                                 )
                               else if (hasTodo)
-                                Container(width: 8, height: 8, decoration: BoxDecoration(color: selected ? Colors.white : const Color(0xFF006689), shape: BoxShape.circle)),
+                                Container(
+                                  width: 18,
+                                  height: 18,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(color: selected ? Colors.white : const Color(0xFF006689), shape: BoxShape.circle),
+                                  child: Text('$dayTodoCount', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: selected ? const Color(0xFF006689) : Colors.white)),
+                                ),
                             ],
                           ),
                         );
@@ -428,6 +469,111 @@ class _SquareActionButton extends StatelessWidget {
         height: 52,
         decoration: AppTheme.glassCard(),
         child: Icon(icon, color: AppColors.primaryStrong),
+      ),
+    );
+  }
+}
+
+class _DayDetailSheet extends StatelessWidget {
+  final DateTime day;
+  final Map<String, dynamic>? segment;
+  final List<Map<String, dynamic>> allSegments;
+  final List<Map<String, dynamic>> todos;
+
+  const _DayDetailSheet({required this.day, required this.segment, required this.allSegments, required this.todos});
+
+  @override
+  Widget build(BuildContext context) {
+    final segmentColor = segment == null ? AppColors.primaryStrong : Color(int.parse((segment!['color'] ?? PlannerService.segmentPalette.first).toString()));
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.92),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(child: Container(width: 44, height: 4, decoration: BoxDecoration(color: AppColors.lightMuted.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(999)))),
+            const SizedBox(height: 18),
+            Text('${day.month}월 ${day.day}일 상세', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.lightText)),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: segmentColor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20), border: Border.all(color: segmentColor.withValues(alpha: 0.28))),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('오늘 진행 구간', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.lightMuted)),
+                const SizedBox(height: 6),
+                Text(segment?['name'] ?? '해당 구간 없음', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: segmentColor)),
+                if (segment != null) ...[
+                  const SizedBox(height: 6),
+                  Text('${segment!['start_date']} ~ ${segment!['end_date']}', style: const TextStyle(fontSize: 12, color: AppColors.lightMuted)),
+                ],
+              ]),
+            ),
+            const SizedBox(height: 16),
+            const Text('커리큘럼 진행 구간', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.lightText)),
+            const SizedBox(height: 10),
+            ...allSegments.map((item) {
+              final color = Color(int.parse((item['color'] ?? PlannerService.segmentPalette.first).toString()));
+              final active = segment != null && item['id'] == segment!['id'];
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: color.withValues(alpha: active ? 0.18 : 0.1), borderRadius: BorderRadius.circular(16), border: Border.all(color: color.withValues(alpha: active ? 0.35 : 0.18))),
+                child: Row(children: [
+                  Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(item['name'] ?? '-', style: TextStyle(fontWeight: FontWeight.w800, color: active ? color : AppColors.lightText))),
+                  Text('${item['start_date']} ~ ${item['end_date']}', style: const TextStyle(fontSize: 11, color: AppColors.lightMuted)),
+                ]),
+              );
+            }),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Text('오늘 해야 할 일', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.lightText)),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: const Color(0x190050CB), borderRadius: BorderRadius.circular(999)),
+                  child: Text('${todos.length}개', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.primaryStrong)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            if (todos.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Text('이 날짜에 등록된 할일이 아직 없어.', style: TextStyle(color: AppColors.lightMuted)),
+              )
+            else
+              ...todos.map((todo) => Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.black.withValues(alpha: 0.05))),
+                    child: Row(children: [
+                      Icon(
+                        (todo['status'] ?? 'todo') == 'done'
+                            ? Icons.check_circle_rounded
+                            : (todo['status'] ?? 'todo') == 'in_progress'
+                                ? Icons.adjust_rounded
+                                : Icons.radio_button_unchecked_rounded,
+                        color: (todo['status'] ?? 'todo') == 'done' ? Colors.green : AppColors.primaryStrong,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(child: Text(todo['title'] ?? '-', style: const TextStyle(fontWeight: FontWeight.w700))),
+                      Text((todo['priority'] ?? 'medium').toString(), style: const TextStyle(fontSize: 11, color: AppColors.lightMuted)),
+                    ]),
+                  )),
+          ],
+        ),
       ),
     );
   }
