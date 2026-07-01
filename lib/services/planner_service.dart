@@ -117,8 +117,54 @@ class PlannerService {
     return null;
   }
 
+  static Future<void> _ensureDemoSampleData() async {
+    final guidelines = await _getDemoList(_guidelineKey);
+    final curriculums = await _getDemoList(_curriculumKey);
+    final todos = await _getDemoList(_todoKey);
+    if (guidelines.isNotEmpty || curriculums.isNotEmpty || todos.isNotEmpty) return;
+
+    const guidelineId = 'demo-guideline-study-pilot';
+    const curriculumId = 'demo-curriculum-study-pilot';
+
+    await _setDemoList(_guidelineKey, [
+      {
+        'id': guidelineId,
+        'target_role': 'Flutter 프론트엔드 개발자',
+        'title': 'Study Pilot 앱 완성 루트',
+        'notes': '기초 구조부터 캘린더/투두/배포까지 단계적으로 완성하는 예시 플랜',
+        'created_at': DateTime(2026, 7, 1).toIso8601String(),
+      }
+    ]);
+
+    await _setDemoList(_curriculumKey, [
+      {
+        'id': curriculumId,
+        'guideline_id': guidelineId,
+        'title': 'Study Pilot 제품 완성 커리큘럼',
+        'start_date': '2026-07-01',
+        'end_date': '2026-07-31',
+        'segments': [
+          {'id': 'segment-1', 'name': '기획 정리', 'end_date': '2026-07-07', 'order': 0, 'color': segmentPalette[0]},
+          {'id': 'segment-2', 'name': '학습 탭 구현', 'end_date': '2026-07-14', 'order': 1, 'color': segmentPalette[1]},
+          {'id': 'segment-3', 'name': '캘린더 연결', 'end_date': '2026-07-21', 'order': 2, 'color': segmentPalette[2]},
+          {'id': 'segment-4', 'name': '투두 실행 흐름', 'end_date': '2026-07-26', 'order': 3, 'color': segmentPalette[3]},
+        ],
+      }
+    ]);
+
+    await _setDemoList(_todoKey, [
+      {'id': 'todo-1', 'curriculum_id': curriculumId, 'title': '홈 시안 구조 점검', 'due_date': '2026-07-03', 'status': 'done', 'priority': 'high'},
+      {'id': 'todo-2', 'curriculum_id': curriculumId, 'title': '학습 탭 연결 상태 확인', 'due_date': '2026-07-10', 'status': 'in_progress', 'priority': 'high'},
+      {'id': 'todo-3', 'curriculum_id': curriculumId, 'title': '커리큘럼 분기점 데이터 입력', 'due_date': '2026-07-15', 'status': 'todo', 'priority': 'medium'},
+      {'id': 'todo-4', 'curriculum_id': curriculumId, 'title': '학습 캘린더 구간 색상 검수', 'due_date': '2026-07-18', 'status': 'todo', 'priority': 'high'},
+      {'id': 'todo-5', 'curriculum_id': curriculumId, 'title': '날짜 팝업에서 오늘 할일 확인', 'due_date': '2026-07-18', 'status': 'todo', 'priority': 'medium'},
+      {'id': 'todo-6', 'curriculum_id': curriculumId, 'title': '배포 전 최종 점검', 'due_date': '2026-07-29', 'status': 'todo', 'priority': 'high'},
+    ]);
+  }
+
   static Future<List<Map<String, dynamic>>> listGuidelines() async {
     if (AuthService.isDemoMode) {
+      await _ensureDemoSampleData();
       return _getDemoList(_guidelineKey);
     }
     return (await _c.from('guidelines').select('*').order('created_at', ascending: false)).cast<Map<String, dynamic>>();
@@ -142,6 +188,7 @@ class PlannerService {
 
   static Future<List<Map<String, dynamic>>> listCurriculums() async {
     if (AuthService.isDemoMode) {
+      await _ensureDemoSampleData();
       return _getDemoList(_curriculumKey);
     }
     return (await _c.from('curriculums').select('*, guidelines(title,target_role), segments').order('start_date', ascending: true)).cast<Map<String, dynamic>>();
@@ -174,6 +221,7 @@ class PlannerService {
 
   static Future<List<Map<String, dynamic>>> listTodos() async {
     if (AuthService.isDemoMode) {
+      await _ensureDemoSampleData();
       return _getDemoList(_todoKey);
     }
     return (await _c.from('todos').select('*, curriculums(title)').order('due_date', ascending: true)).cast<Map<String, dynamic>>();
