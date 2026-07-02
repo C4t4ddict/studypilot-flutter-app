@@ -229,79 +229,85 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
                       itemCount: visibleDays.length,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 7, mainAxisSpacing: 12),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 7, mainAxisSpacing: 10, crossAxisSpacing: 4, mainAxisExtent: 64),
                       itemBuilder: (context, index) {
                         final day = visibleDays[index];
                         final selected = day.year == _selected.year && day.month == _selected.month && day.day == _selected.day;
                         final inMonth = day.month == _displayMonth.month;
-                        final hasTodo = selectedCurriculumTodos.any((t) => _isSameDay(day, t['due_date'] as String?));
                         final segment = selectedCurriculum == null ? null : PlannerService.findSegmentForDate(selectedCurriculum, day);
                         final dayTodoCount = selectedCurriculumTodos.where((t) => _isSameDay(day, t['due_date'] as String?)).length;
+                        final segmentColor = segment == null ? null : Color(int.parse((segment['color'] ?? PlannerService.segmentPalette.first).toString()));
                         return InkWell(
                           onTap: () {
                             setState(() => _selected = day);
                             _showDayDetailSheet(day: day, curriculum: selectedCurriculum, todos: selectedCurriculumTodos);
                           },
-                          borderRadius: BorderRadius.circular(999),
-                          child: Column(
-                            children: [
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: selected ? const Color(0xFF0050CB) : Colors.transparent,
-                                  shape: BoxShape.circle,
-                                  boxShadow: selected ? const [BoxShadow(color: Color(0x330050CB), blurRadius: 18)] : null,
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  '${day.day}',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: selected ? Colors.white : (inMonth ? AppColors.lightText : AppColors.lightMuted.withValues(alpha: 0.3)),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              if (segment != null)
-                                Column(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                      width: 34,
+                                      height: 34,
                                       decoration: BoxDecoration(
-                                        color: Color(int.parse((segment['color'] ?? PlannerService.segmentPalette.first).toString())).withValues(alpha: 0.18),
-                                        borderRadius: BorderRadius.circular(999),
+                                        color: selected ? const Color(0xFF0050CB) : Colors.transparent,
+                                        shape: BoxShape.circle,
+                                        boxShadow: selected ? const [BoxShadow(color: Color(0x330050CB), blurRadius: 18)] : null,
                                       ),
+                                      alignment: Alignment.center,
                                       child: Text(
-                                        _segmentLabel((segment['name'] ?? '-').toString()),
-                                        maxLines: 2,
-                                        textAlign: TextAlign.center,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(fontSize: 7, height: 1.1, fontWeight: FontWeight.w700, color: Color(int.parse((segment['color'] ?? PlannerService.segmentPalette.first).toString()))),
+                                        '${day.day}',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          color: selected ? Colors.white : (inMonth ? AppColors.lightText : AppColors.lightMuted.withValues(alpha: 0.3)),
+                                        ),
                                       ),
                                     ),
                                     if (dayTodoCount > 0) ...[
-                                      const SizedBox(height: 3),
+                                      const SizedBox(width: 4),
                                       Container(
-                                        width: 18,
-                                        height: 18,
+                                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                                         alignment: Alignment.center,
-                                        decoration: BoxDecoration(color: selected ? Colors.white : const Color(0xFF006689), shape: BoxShape.circle),
-                                        child: Text('$dayTodoCount', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: selected ? const Color(0xFF006689) : Colors.white)),
+                                        decoration: BoxDecoration(
+                                          color: selected ? Colors.white : const Color(0xFF006689),
+                                          borderRadius: BorderRadius.circular(999),
+                                        ),
+                                        child: Text(
+                                          '$dayTodoCount',
+                                          style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: selected ? const Color(0xFF006689) : Colors.white),
+                                        ),
                                       ),
                                     ],
                                   ],
-                                )
-                              else if (hasTodo)
-                                Container(
-                                  width: 18,
-                                  height: 18,
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(color: selected ? Colors.white : const Color(0xFF006689), shape: BoxShape.circle),
-                                  child: Text('$dayTodoCount', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: selected ? const Color(0xFF006689) : Colors.white)),
                                 ),
-                            ],
+                                const SizedBox(height: 6),
+                                if (segment != null)
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: segmentColor!.withValues(alpha: 0.16),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: segmentColor.withValues(alpha: 0.24)),
+                                    ),
+                                    child: Text(
+                                      _segmentLabel((segment['name'] ?? '-').toString()),
+                                      maxLines: 1,
+                                      textAlign: TextAlign.center,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: segmentColor),
+                                    ),
+                                  )
+                                else
+                                  const SizedBox(height: 18),
+                              ],
+                            ),
                           ),
                         );
                       },
