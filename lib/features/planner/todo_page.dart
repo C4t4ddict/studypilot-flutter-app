@@ -15,6 +15,15 @@ class _TodoPageState extends State<TodoPage> {
   DateTime _selectedDate = DateTime.now();
   DateTime _displayMonth = DateTime(DateTime.now().year, DateTime.now().month, 1);
   String _viewMode = 'month';
+  String _quickPriority = 'high';
+  final TextEditingController _quickTodoCtrl = TextEditingController();
+  bool _addingTodo = false;
+
+  @override
+  void dispose() {
+    _quickTodoCtrl.dispose();
+    super.dispose();
+  }
 
   bool _sameDay(DateTime a, String? ymd) {
     final b = DateTime.tryParse(ymd ?? '');
@@ -55,9 +64,7 @@ class _TodoPageState extends State<TodoPage> {
           children: [
             Text('• 이 탭은 날짜별 실행 미션을 확인하고 상태를 바꾸는 공간이야.'),
             SizedBox(height: 8),
-            Text('• 커리큘럼을 고르면 해당 학습 항로의 할일만 골라서 볼 수 있어.'),
-            SizedBox(height: 8),
-            Text('• 날짜를 누르면 그날 해야 할 할일 카드가 아래에 보여.'),
+            Text('• 오늘 집중해야 할 일과 밀린 일, 진행 중인 일을 먼저 보게 구성했어.'),
             SizedBox(height: 8),
             Text('• 카드를 누르면 대기 → 진행중 → 완료 순서로 상태가 바뀌어.'),
           ],
@@ -67,6 +74,32 @@ class _TodoPageState extends State<TodoPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _addQuickTodo() async {
+    if (_curriculumId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('먼저 커리큘럼을 선택해줘.')));
+      return;
+    }
+    if (_quickTodoCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('추가할 할일 내용을 입력해줘.')));
+      return;
+    }
+    setState(() => _addingTodo = true);
+    try {
+      await PlannerService.createTodo(
+        curriculumId: _curriculumId!,
+        title: _quickTodoCtrl.text.trim(),
+        dueDate: _selectedDate,
+        priority: _quickPriority,
+      );
+      _quickTodoCtrl.clear();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('선택 날짜에 할일을 추가했어.')));
+      setState(() {});
+    } finally {
+      if (mounted) setState(() => _addingTodo = false);
+    }
   }
 
   @override
@@ -84,6 +117,10 @@ class _TodoPageState extends State<TodoPage> {
             _curriculumId = curriculums.first['id'] as String;
           }
 
+          final selectedCurriculum = curriculums.where((c) => c['id'] == _curriculumId).cast<Map<String, dynamic>?>().firstWhere(
+                (c) => c != null,
+                orElse: () => curriculums.isNotEmpty ? curriculums.first : null,
+              );
           final selectedCurriculumTodos = todos.where((t) {
             if (_curriculumId == null) return true;
             return t['curriculum_id'] == _curriculumId;
@@ -95,6 +132,16 @@ class _TodoPageState extends State<TodoPage> {
           final pending = selectedTodos.where((t) => (t['status'] ?? 'todo') == 'todo').toList();
           final progress = selectedCurriculumTodos.isEmpty ? 0.0 : selectedCurriculumTodos.where((t) => (t['status'] ?? 'todo') == 'done').length / selectedCurriculumTodos.length;
 
+          final today = DateTime.now();
+          final todayTodos = selectedCurriculumTodos.where((t) => _sameDay(today, t['due_date'] as String?)).toList();
+          final overdueTodos = selectedCurriculumTodos.where((t) {
+            final due = DateTime.tryParse((t['due_date'] ?? '').toString());
+            if (due == null) return false;
+            return DateTime(due.year, due.month, due.day).isBefore(DateTime(today.year, today.month, today.day)) && (t['status'] ?? 'todo') != 'done';
+          }).toList();
+          final inProgressTodos = selectedCurriculumTodos.where((t) => (t['status'] ?? 'todo') == 'in_progress').toList();
+          final focusTodo = inProgressTodos.isNotEmpty ? inProgressTodos.first : (todayTodos.isNotEmpty ? todayTodos.first : (overdueTodos.isNotEmpty ? overdueTodos.first : null));
+
           return ListView(
             padding: const EdgeInsets.fromLTRB(0, 8, 0, 120),
             children: [
@@ -105,7 +152,7 @@ class _TodoPageState extends State<TodoPage> {
                     height: 40,
                     decoration: BoxDecoration(borderRadius: BorderRadius.circular(999), border: Border.all(color: Colors.white), color: Colors.white.withValues(alpha: 0.7)),
                     alignment: Alignment.center,
-                    child: const Icon(Icons.person_rounded, color: AppColors.primaryStrong),
+                    child: const Icon(Icons.task_alt_rounded, color: AppColors.primaryStrong),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -126,34 +173,47 @@ class _TodoPageState extends State<TodoPage> {
                       ],
                     ),
                   ),
-                  IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_rounded, color: AppColors.primaryStrong)),
                 ],
               ),
               const SizedBox(height: 14),
+              _FocusHeaderCard(
+                title: selectedCurriculum?['title'] ?? '현재 커리큘럼 없음',
+                progress: progress,
+                todayCount: todayTodos.length,
+                inProgressCount: inProgressTodos.length,
+                overdueCount: overdueTodos.length,
+                focusTodo: focusTodo?['title']?.toString(),
+              ),
+              const SizedBox(height: 16),
               Container(
                 decoration: AppTheme.glassCard(),
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('CURRENT MISSION', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white, backgroundColor: AppColors.primaryStrong)),
+                    const Text('빠른 추가', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.lightText)),
                     const SizedBox(height: 10),
-                    Text(curriculums.isEmpty ? 'No Curriculum' : (curriculums.firstWhere((c) => c['id'] == _curriculumId, orElse: () => curriculums.first)['title'] ?? '-'), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.primaryStrong)),
+                    TextField(
+                      controller: _quickTodoCtrl,
+                      decoration: InputDecoration(
+                        hintText: '${_selectedDate.month}월 ${_selectedDate.day}일에 끝낼 일을 적어줘',
+                        suffixIcon: IconButton(onPressed: _addingTodo ? null : _addQuickTodo, icon: const Icon(Icons.add_circle_rounded)),
+                      ),
+                    ),
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        const Text('68% CLEARED', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.lightMuted)),
-                        const Spacer(),
-                        SizedBox(
-                          width: 160,
-                          child: LinearProgressIndicator(value: progress == 0 ? 0.18 : progress, minHeight: 6, borderRadius: BorderRadius.circular(999)),
-                        ),
+                        _PriorityChip(label: '중요', active: _quickPriority == 'high', onTap: () => setState(() => _quickPriority = 'high')),
+                        const SizedBox(width: 8),
+                        _PriorityChip(label: '보통', active: _quickPriority == 'medium', onTap: () => setState(() => _quickPriority = 'medium')),
+                        const SizedBox(width: 8),
+                        _PriorityChip(label: '가볍게', active: _quickPriority == 'low', onTap: () => setState(() => _quickPriority = 'low')),
                       ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
@@ -171,31 +231,26 @@ class _TodoPageState extends State<TodoPage> {
                 ],
               ),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: curriculums.map<Widget>((c) {
-                          final active = c['id'] == _curriculumId;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: InkWell(
-                              onTap: () => setState(() => _curriculumId = c['id'] as String),
-                              borderRadius: BorderRadius.circular(999),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                                decoration: BoxDecoration(color: active ? AppColors.primaryStrong : Colors.white.withValues(alpha: 0.4), borderRadius: BorderRadius.circular(999)),
-                                child: Text(c['title'] ?? '-', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: active ? Colors.white : AppColors.lightText)),
-                              ),
-                            ),
-                          );
-                        }).toList(),
+              SizedBox(
+                height: 44,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: curriculums.map<Widget>((c) {
+                    final active = c['id'] == _curriculumId;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: InkWell(
+                        onTap: () => setState(() => _curriculumId = c['id'] as String),
+                        borderRadius: BorderRadius.circular(999),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                          decoration: BoxDecoration(color: active ? AppColors.primaryStrong : Colors.white.withValues(alpha: 0.4), borderRadius: BorderRadius.circular(999)),
+                          child: Text(c['title'] ?? '-', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: active ? Colors.white : AppColors.lightText)),
+                        ),
                       ),
-                    ),
-                  ),
-                ],
+                    );
+                  }).toList(),
+                ),
               ),
               const SizedBox(height: 12),
               Row(
@@ -267,25 +322,56 @@ class _TodoPageState extends State<TodoPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-              Text('Tasks for ${_monthName(_selectedDate.month)} ${_selectedDate.day}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.lightText)),
-              const SizedBox(height: 14),
-              Wrap(
-                runSpacing: 14,
-                spacing: 14,
-                children: [
-                  ...inFlight.map((t) => _TodoMissionCard(todo: t, variant: 'in_flight', onTap: () => _cycleStatus(t))),
-                  ...completed.map((t) => _TodoMissionCard(todo: t, variant: 'done', onTap: () => _cycleStatus(t))),
-                  ...pending.map((t) => _TodoMissionCard(todo: t, variant: 'pending', onTap: () => _cycleStatus(t))),
-                  if (selectedTodos.isEmpty)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: AppTheme.glassCard(),
-                      child: const Text('선택한 날짜에 등록된 할일이 아직 없어.', style: TextStyle(color: AppColors.lightMuted)),
-                    ),
-                ],
+              const SizedBox(height: 18),
+              _ExecutionSummarySection(
+                selectedDate: _selectedDate,
+                pending: pending,
+                inFlight: inFlight,
+                completed: completed,
+                overdueCount: overdueTodos.length,
               ),
+              const SizedBox(height: 14),
+              ...[
+                if (focusTodo != null)
+                  _TodoLaneSection(
+                    title: '지금 가장 중요한 일',
+                    subtitle: '먼저 이것부터 끝내보자.',
+                    todos: [focusTodo],
+                    variant: 'focus',
+                    onTap: _cycleStatus,
+                  ),
+                if (pending.isNotEmpty)
+                  _TodoLaneSection(
+                    title: '오늘 해야 할 일',
+                    subtitle: '선택 날짜에 남아 있는 미션이야.',
+                    todos: pending,
+                    variant: 'pending',
+                    onTap: _cycleStatus,
+                  ),
+                if (inFlight.isNotEmpty)
+                  _TodoLaneSection(
+                    title: '진행 중',
+                    subtitle: '이미 착수한 미션이야.',
+                    todos: inFlight,
+                    variant: 'progress',
+                    onTap: _cycleStatus,
+                  ),
+                if (completed.isNotEmpty)
+                  _TodoLaneSection(
+                    title: '완료한 일',
+                    subtitle: '끝낸 일도 바로 확인할 수 있어.',
+                    todos: completed,
+                    variant: 'done',
+                    onTap: _cycleStatus,
+                  ),
+                if (pending.isEmpty && inFlight.isEmpty && completed.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: AppTheme.glassCard(),
+                    child: const Text('선택한 날짜에 등록된 할일이 아직 없어. 위에서 바로 추가해봐.', style: TextStyle(color: AppColors.lightMuted)),
+                  ),
+              ].expand((widget) => [widget, const SizedBox(height: 14)]),
             ],
           );
         },
@@ -297,6 +383,171 @@ class _TodoPageState extends State<TodoPage> {
 String _monthName(int month) {
   const names = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   return names[month - 1];
+}
+
+class _FocusHeaderCard extends StatelessWidget {
+  final String title;
+  final double progress;
+  final int todayCount;
+  final int inProgressCount;
+  final int overdueCount;
+  final String? focusTodo;
+
+  const _FocusHeaderCard({required this.title, required this.progress, required this.todayCount, required this.inProgressCount, required this.overdueCount, required this.focusTodo});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: AppTheme.glassCard(),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('TODAY FOCUS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.primaryStrong)),
+          const SizedBox(height: 8),
+          Text(title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.lightText)),
+          const SizedBox(height: 8),
+          Text(focusTodo == null ? '오늘 바로 실행할 할일을 골라보자.' : '지금 가장 먼저 끝낼 일: $focusTodo', style: const TextStyle(fontSize: 13, height: 1.5, color: AppColors.lightMuted)),
+          const SizedBox(height: 14),
+          LinearProgressIndicator(value: progress == 0 ? 0.08 : progress, minHeight: 8, borderRadius: BorderRadius.circular(999)),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: _MiniStatCard(label: '오늘', value: '$todayCount개')),
+              const SizedBox(width: 8),
+              Expanded(child: _MiniStatCard(label: '진행중', value: '$inProgressCount개')),
+              const SizedBox(width: 8),
+              Expanded(child: _MiniStatCard(label: '밀림', value: '$overdueCount개')),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniStatCard extends StatelessWidget {
+  final String label;
+  final String value;
+  const _MiniStatCard({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.34), borderRadius: BorderRadius.circular(16)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.lightMuted)),
+        const SizedBox(height: 4),
+        Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.lightText)),
+      ]),
+    );
+  }
+}
+
+class _PriorityChip extends StatelessWidget {
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+  const _PriorityChip({required this.label, required this.active, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        decoration: BoxDecoration(color: active ? AppColors.primaryStrong : Colors.white.withValues(alpha: 0.35), borderRadius: BorderRadius.circular(999)),
+        child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: active ? Colors.white : AppColors.lightMuted)),
+      ),
+    );
+  }
+}
+
+class _ExecutionSummarySection extends StatelessWidget {
+  final DateTime selectedDate;
+  final List<Map<String, dynamic>> pending;
+  final List<Map<String, dynamic>> inFlight;
+  final List<Map<String, dynamic>> completed;
+  final int overdueCount;
+
+  const _ExecutionSummarySection({required this.selectedDate, required this.pending, required this.inFlight, required this.completed, required this.overdueCount});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: AppTheme.glassCard(),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('${selectedDate.month}월 ${selectedDate.day}일 실행 요약', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.lightText)),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _SummaryPill(label: '대기', value: '${pending.length}개'),
+              _SummaryPill(label: '진행중', value: '${inFlight.length}개'),
+              _SummaryPill(label: '완료', value: '${completed.length}개'),
+              _SummaryPill(label: '밀린 일정', value: '$overdueCount개'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryPill extends StatelessWidget {
+  final String label;
+  final String value;
+  const _SummaryPill({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.34), borderRadius: BorderRadius.circular(999)),
+      child: Text('$label $value', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.lightText)),
+    );
+  }
+}
+
+class _TodoLaneSection extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final List<Map<String, dynamic>> todos;
+  final String variant;
+  final Future<void> Function(Map<String, dynamic>) onTap;
+
+  const _TodoLaneSection({required this.title, required this.subtitle, required this.todos, required this.variant, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.lightText)),
+              const SizedBox(height: 4),
+              Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.lightMuted)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        ...todos.map((todo) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _TodoMissionCard(todo: todo, variant: variant, onTap: () => onTap(todo)),
+            )),
+      ],
+    );
+  }
 }
 
 class _ToggleButton extends StatelessWidget {
@@ -329,46 +580,43 @@ class _TodoMissionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isInFlight = variant == 'in_flight';
+    final isInFlight = variant == 'progress';
     final isDone = variant == 'done';
-    final accent = isInFlight ? AppColors.primaryStrong : (isDone ? const Color(0xFF77D1FF) : const Color(0xFFC2C6D8));
-    return SizedBox(
-      width: MediaQuery.of(context).size.width > 700 ? (MediaQuery.of(context).size.width - 68) / 2 : double.infinity,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
-        child: Container(
-          decoration: AppTheme.glassCard().copyWith(
-            border: Border.all(color: isInFlight ? AppColors.primaryStrong : Colors.white.withValues(alpha: 0.6)),
-          ),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+    final isFocus = variant == 'focus';
+    final accent = isFocus ? const Color(0xFFFFB020) : isInFlight ? AppColors.primaryStrong : (isDone ? const Color(0xFF77D1FF) : const Color(0xFFC2C6D8));
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        decoration: AppTheme.glassCard().copyWith(
+          border: Border.all(color: accent.withValues(alpha: 0.5)),
+        ),
+        padding: const EdgeInsets.all(18),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(color: accent.withValues(alpha: 0.12), shape: BoxShape.circle),
+              alignment: Alignment.center,
+              child: Icon(
+                isDone ? Icons.check_circle_rounded : isInFlight ? Icons.rocket_launch_rounded : isFocus ? Icons.local_fire_department_rounded : Icons.radio_button_unchecked_rounded,
+                color: accent,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(isDone ? Icons.check_circle_rounded : isInFlight ? Icons.adjust_rounded : Icons.radio_button_unchecked_rounded, color: accent),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(color: accent.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(999)),
-                    child: Text(isDone ? 'MISSION ACCOMPLISHED' : isInFlight ? 'IN FLIGHT' : 'PENDING', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: accent)),
-                  ),
+                  Text(todo['title'] ?? '-', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: isDone ? AppColors.lightMuted : AppColors.lightText, decoration: isDone ? TextDecoration.lineThrough : null)),
+                  const SizedBox(height: 4),
+                  Text('우선순위 ${(todo['priority'] ?? 'medium').toString()} · 상태 ${(todo['status'] ?? 'todo').toString()}', style: const TextStyle(fontSize: 12, color: AppColors.lightMuted)),
                 ],
               ),
-              const SizedBox(height: 26),
-              Text(todo['title'] ?? '-', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: isDone ? AppColors.lightMuted : AppColors.lightText, decoration: isDone ? TextDecoration.lineThrough : null)),
-              const SizedBox(height: 10),
-              Text('상태: ${(todo['status'] ?? 'todo').toString()} · 우선순위: ${(todo['priority'] ?? 'medium').toString()}', style: const TextStyle(fontSize: 14, color: AppColors.lightMuted)),
-              const SizedBox(height: 18),
-              Row(
-                children: [
-                  Expanded(child: Text(isDone ? '완료 처리됨' : isInFlight ? '진행 중 미션' : '대기 중 미션', style: const TextStyle(fontSize: 12, color: AppColors.lightMuted))),
-                  Icon(isDone ? Icons.restart_alt_rounded : isInFlight ? Icons.more_vert_rounded : Icons.arrow_forward_rounded, color: AppColors.lightMuted),
-                ],
-              ),
-            ],
-          ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: AppColors.lightMuted),
+          ],
         ),
       ),
     );
