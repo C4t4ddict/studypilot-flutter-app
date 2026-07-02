@@ -154,7 +154,7 @@ class _TodoPageState extends State<TodoPage> {
                     alignment: Alignment.center,
                     child: const Icon(Icons.task_alt_rounded, color: AppColors.primaryStrong),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Row(
                       children: [
@@ -201,12 +201,12 @@ class _TodoPageState extends State<TodoPage> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    Row(
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
                         _PriorityChip(label: '중요', active: _quickPriority == 'high', onTap: () => setState(() => _quickPriority = 'high')),
-                        const SizedBox(width: 8),
                         _PriorityChip(label: '보통', active: _quickPriority == 'medium', onTap: () => setState(() => _quickPriority = 'medium')),
-                        const SizedBox(width: 8),
                         _PriorityChip(label: '가볍게', active: _quickPriority == 'low', onTap: () => setState(() => _quickPriority = 'low')),
                       ],
                     ),
@@ -343,7 +343,7 @@ class _TodoPageState extends State<TodoPage> {
                 if (pending.isNotEmpty)
                   _TodoLaneSection(
                     title: '오늘 해야 할 일',
-                    subtitle: '선택 날짜에 남아 있는 미션이야.',
+                    subtitle: '선택 날짜에 남아 있는 핵심 미션이야.',
                     todos: pending,
                     variant: 'pending',
                     onTap: _cycleStatus,
@@ -351,7 +351,7 @@ class _TodoPageState extends State<TodoPage> {
                 if (inFlight.isNotEmpty)
                   _TodoLaneSection(
                     title: '진행 중',
-                    subtitle: '이미 착수한 미션이야.',
+                    subtitle: '지금 손대고 있는 작업 흐름이야.',
                     todos: inFlight,
                     variant: 'progress',
                     onTap: _cycleStatus,
@@ -359,7 +359,7 @@ class _TodoPageState extends State<TodoPage> {
                 if (completed.isNotEmpty)
                   _TodoLaneSection(
                     title: '완료한 일',
-                    subtitle: '끝낸 일도 바로 확인할 수 있어.',
+                    subtitle: '완료한 일은 체크 감각이 살아있게 남겨둘게.',
                     todos: completed,
                     variant: 'done',
                     onTap: _cycleStatus,
@@ -399,7 +399,7 @@ class _FocusHeaderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: AppTheme.glassCard(),
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -407,7 +407,7 @@ class _FocusHeaderCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.lightText)),
           const SizedBox(height: 8),
-          Text(focusTodo == null ? '오늘 바로 실행할 할일을 골라보자.' : '지금 가장 먼저 끝낼 일: $focusTodo', style: const TextStyle(fontSize: 13, height: 1.5, color: AppColors.lightMuted)),
+          Text(focusTodo == null ? '오늘 바로 실행할 할일을 골라보자.' : '지금 가장 먼저 끝낼 일 · $focusTodo', style: const TextStyle(fontSize: 13, height: 1.45, color: AppColors.lightMuted)),
           const SizedBox(height: 14),
           LinearProgressIndicator(value: progress == 0 ? 0.08 : progress, minHeight: 8, borderRadius: BorderRadius.circular(999)),
           const SizedBox(height: 12),
@@ -591,7 +591,7 @@ class _TodoMissionCard extends StatelessWidget {
         decoration: AppTheme.glassCard().copyWith(
           border: Border.all(color: accent.withValues(alpha: 0.5)),
         ),
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(16),
         child: Row(
           children: [
             Container(
@@ -604,14 +604,14 @@ class _TodoMissionCard extends StatelessWidget {
                 color: accent,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(todo['title'] ?? '-', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: isDone ? AppColors.lightMuted : AppColors.lightText, decoration: isDone ? TextDecoration.lineThrough : null)),
+                  Text(todo['title'] ?? '-', maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: isDone ? AppColors.lightMuted : AppColors.lightText, decoration: isDone ? TextDecoration.lineThrough : null)),
                   const SizedBox(height: 4),
-                  Text('우선순위 ${(todo['priority'] ?? 'medium').toString()} · 상태 ${(todo['status'] ?? 'todo').toString()}', style: const TextStyle(fontSize: 12, color: AppColors.lightMuted)),
+                  Text('우선순위 ${(todo['priority'] ?? 'medium').toString()} · 상태 ${(todo['status'] ?? 'todo').toString()}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: AppColors.lightMuted)),
                 ],
               ),
             ),
