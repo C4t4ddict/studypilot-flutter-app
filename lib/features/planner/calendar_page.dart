@@ -112,15 +112,47 @@ class _PlannerCalendarPageState extends State<PlannerCalendarPage> {
     return trimmed.runes.length <= 7 ? trimmed : '${String.fromCharCodes(trimmed.runes.take(7))}...';
   }
 
+  Map<String, dynamic>? _buildCurriculumStatus(DateTime day, Map<String, dynamic>? curriculum) {
+    if (curriculum == null) return null;
+    final curriculumTitle = (curriculum['title'] ?? '-').toString();
+    final segments = PlannerService.buildCurriculumSegments(curriculum);
+    final selectedDay = DateTime(day.year, day.month, day.day);
+
+    for (final segment in segments) {
+      final start = DateTime.tryParse((segment['start_date'] ?? '').toString());
+      final end = DateTime.tryParse((segment['end_date'] ?? '').toString());
+      if (start == null || end == null) continue;
+      final normalizedStart = DateTime(start.year, start.month, start.day);
+      final normalizedEnd = DateTime(end.year, end.month, end.day);
+      final diffToStart = normalizedStart.difference(selectedDay).inDays;
+      if (!selectedDay.isBefore(normalizedStart) && !selectedDay.isAfter(normalizedEnd)) {
+        return {
+          'title': '$curriculumTitle - ${segment['name']}',
+          'subtitle': '진행중',
+          'color': segment['color'],
+        };
+      }
+      if (diffToStart > 0 && diffToStart <= 3) {
+        return {
+          'title': '곧 시작할 $curriculumTitle - ${segment['name']}',
+          'subtitle': '시작 $diffToStart일전',
+          'color': segment['color'],
+        };
+      }
+    }
+    return null;
+  }
+
   Future<void> _showDayDetailSheet({required DateTime day, required Map<String, dynamic>? curriculum, required List<Map<String, dynamic>> todos}) async {
     final dayTodos = todos.where((t) => _isSameDay(day, t['due_date'] as String?)).toList();
     final segment = curriculum == null ? null : PlannerService.findSegmentForDate(curriculum, day);
     final allSegments = curriculum == null ? const <Map<String, dynamic>>[] : PlannerService.buildCurriculumSegments(curriculum);
+    final status = _buildCurriculumStatus(day, curriculum);
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _DayDetailSheet(day: day, segment: segment, allSegments: allSegments, todos: dayTodos),
+      builder: (_) => _DayDetailSheet(day: day, segment: segment, allSegments: allSegments, todos: dayTodos, status: status),
     );
   }
 
@@ -486,8 +518,9 @@ class _DayDetailSheet extends StatelessWidget {
   final Map<String, dynamic>? segment;
   final List<Map<String, dynamic>> allSegments;
   final List<Map<String, dynamic>> todos;
+  final Map<String, dynamic>? status;
 
-  const _DayDetailSheet({required this.day, required this.segment, required this.allSegments, required this.todos});
+  const _DayDetailSheet({required this.day, required this.segment, required this.allSegments, required this.todos, required this.status});
 
   @override
   Widget build(BuildContext context) {
@@ -501,85 +534,107 @@ class _DayDetailSheet extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(child: Container(width: 44, height: 4, decoration: BoxDecoration(color: AppColors.lightMuted.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(999)))),
-            const SizedBox(height: 18),
-            Text('${day.month}월 ${day.day}일 상세', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.lightText)),
-            const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: segmentColor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20), border: Border.all(color: segmentColor.withValues(alpha: 0.28))),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('오늘 진행 구간', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.lightMuted)),
-                const SizedBox(height: 6),
-                Text(segment?['name'] ?? '해당 구간 없음', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: segmentColor)),
-                if (segment != null) ...[
-                  const SizedBox(height: 6),
-                  Text('${segment!['start_date']} ~ ${segment!['end_date']}', style: const TextStyle(fontSize: 12, color: AppColors.lightMuted)),
-                ],
-              ]),
-            ),
-            const SizedBox(height: 16),
-            const Text('커리큘럼 진행 구간', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.lightText)),
-            const SizedBox(height: 10),
-            ...allSegments.map((item) {
-              final color = Color(int.parse((item['color'] ?? PlannerService.segmentPalette.first).toString()));
-              final active = segment != null && item['id'] == segment!['id'];
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: color.withValues(alpha: active ? 0.18 : 0.1), borderRadius: BorderRadius.circular(16), border: Border.all(color: color.withValues(alpha: active ? 0.35 : 0.18))),
-                child: Row(children: [
-                  Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-                  const SizedBox(width: 10),
-                  Expanded(child: Text(item['name'] ?? '-', style: TextStyle(fontWeight: FontWeight.w800, color: active ? color : AppColors.lightText))),
-                  Text('${item['start_date']} ~ ${item['end_date']}', style: const TextStyle(fontSize: 11, color: AppColors.lightMuted)),
-                ]),
-              );
-            }),
-            const SizedBox(height: 16),
-            Row(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.72),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('오늘 해야 할 일', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.lightText)),
-                const SizedBox(width: 8),
+                Center(child: Container(width: 44, height: 4, decoration: BoxDecoration(color: AppColors.lightMuted.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(999)))),
+                const SizedBox(height: 18),
+                Text('${day.month}월 ${day.day}일 상세', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.lightText)),
+                if (status != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Color(int.parse((status!['color'] ?? PlannerService.segmentPalette.first).toString())).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: Color(int.parse((status!['color'] ?? PlannerService.segmentPalette.first).toString())).withValues(alpha: 0.24)),
+                    ),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(status!['title'] ?? '-', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.lightText)),
+                      const SizedBox(height: 4),
+                      Text(status!['subtitle'] ?? '-', style: const TextStyle(fontSize: 12, color: AppColors.lightMuted)),
+                    ]),
+                  ),
+                ],
+                const SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: const Color(0x190050CB), borderRadius: BorderRadius.circular(999)),
-                  child: Text('${todos.length}개', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.primaryStrong)),
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(color: segmentColor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20), border: Border.all(color: segmentColor.withValues(alpha: 0.28))),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Text('오늘 진행 구간', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.lightMuted)),
+                    const SizedBox(height: 6),
+                    Text(segment?['name'] ?? '해당 구간 없음', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: segmentColor)),
+                    if (segment != null) ...[
+                      const SizedBox(height: 6),
+                      Text('${segment!['start_date']} ~ ${segment!['end_date']}', style: const TextStyle(fontSize: 12, color: AppColors.lightMuted)),
+                    ],
+                  ]),
                 ),
+                const SizedBox(height: 16),
+                const Text('커리큘럼 진행 구간', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.lightText)),
+                const SizedBox(height: 10),
+                ...allSegments.map((item) {
+                  final color = Color(int.parse((item['color'] ?? PlannerService.segmentPalette.first).toString()));
+                  final active = segment != null && item['id'] == segment!['id'];
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: color.withValues(alpha: active ? 0.18 : 0.1), borderRadius: BorderRadius.circular(16), border: Border.all(color: color.withValues(alpha: active ? 0.35 : 0.18))),
+                    child: Row(children: [
+                      Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+                      const SizedBox(width: 10),
+                      Expanded(child: Text(item['name'] ?? '-', style: TextStyle(fontWeight: FontWeight.w800, color: active ? color : AppColors.lightText))),
+                      Text('${item['start_date']} ~ ${item['end_date']}', style: const TextStyle(fontSize: 11, color: AppColors.lightMuted)),
+                    ]),
+                  );
+                }),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Text('오늘 해야 할 일', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.lightText)),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(color: const Color(0x190050CB), borderRadius: BorderRadius.circular(999)),
+                      child: Text('${todos.length}개', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.primaryStrong)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                if (todos.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Text('이 날짜에 등록된 할일이 아직 없어.', style: TextStyle(color: AppColors.lightMuted)),
+                  )
+                else
+                  ...todos.map((todo) => Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.black.withValues(alpha: 0.05))),
+                        child: Row(children: [
+                          Icon(
+                            (todo['status'] ?? 'todo') == 'done'
+                                ? Icons.check_circle_rounded
+                                : (todo['status'] ?? 'todo') == 'in_progress'
+                                    ? Icons.adjust_rounded
+                                    : Icons.radio_button_unchecked_rounded,
+                            color: (todo['status'] ?? 'todo') == 'done' ? Colors.green : AppColors.primaryStrong,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(child: Text(todo['title'] ?? '-', style: const TextStyle(fontWeight: FontWeight.w700))),
+                          Text((todo['priority'] ?? 'medium').toString(), style: const TextStyle(fontSize: 11, color: AppColors.lightMuted)),
+                        ]),
+                      )),
               ],
             ),
-            const SizedBox(height: 10),
-            if (todos.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Text('이 날짜에 등록된 할일이 아직 없어.', style: TextStyle(color: AppColors.lightMuted)),
-              )
-            else
-              ...todos.map((todo) => Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.black.withValues(alpha: 0.05))),
-                    child: Row(children: [
-                      Icon(
-                        (todo['status'] ?? 'todo') == 'done'
-                            ? Icons.check_circle_rounded
-                            : (todo['status'] ?? 'todo') == 'in_progress'
-                                ? Icons.adjust_rounded
-                                : Icons.radio_button_unchecked_rounded,
-                        color: (todo['status'] ?? 'todo') == 'done' ? Colors.green : AppColors.primaryStrong,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(child: Text(todo['title'] ?? '-', style: const TextStyle(fontWeight: FontWeight.w700))),
-                      Text((todo['priority'] ?? 'medium').toString(), style: const TextStyle(fontSize: 11, color: AppColors.lightMuted)),
-                    ]),
-                  )),
-          ],
+          ),
         ),
       ),
     );
